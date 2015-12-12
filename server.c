@@ -15,11 +15,11 @@ void ejecutarJoin();
 void ejecutarList();
 void ejecutarMotd();
 void ejecutarNames();
-void ejecutarNick();
-void ejecutaPart();
-void ejecutaPrivmsg();
+void ejecutarNick(char * nombre);
+void ejecutaPart( int canal);
+void ejecutaPrivmsg(void * receptor, char* mensaje);
 void ejecutaQuit();
-void ejecutaSetname();
+void ejecutaSetname(char* real_nombre);
 void ejecutaTime();
 void ejecutaUser();
 void ejecutaUsers();
@@ -187,30 +187,30 @@ void ejecutarNames(){
 	printf("%s\n", "Muestra los nombres de los canales");
 }
 
-void ejecutarNick(){
-	printf("%s\n", "Muestra los nombres de los canales");
+void ejecutarNick(char * nombre){
+	printf("%s %s\n", "Este es el nuevo nombre", nombre);
 }
-void ejecutaPart(){
-	printf("%s\n", "Muestra los nombres de los canales");
+void ejecutaPart( int canal){
+	printf("%s %d\n", "Sale del canal", canal);
 }
-void ejecutaPrivmsg(){
-	printf("%s\n", "Muestra los nombres de los canales");
+void ejecutaPrivmsg(void * receptor, char* mensaje){
+	printf("%s\n", "Envia un mensaje privado");
 }
 void ejecutaQuit(){
-	printf("%s\n", "Muestra los nombres de los canales");
+	printf("%s\n", "Desconecta el usuario del servidor");
 }
-void ejecutaSetname(){
-	printf("%s\n", "Muestra los nombres de los canales");
+void ejecutaSetname(char* real_nombre){
+	printf("%s %s\n", "Permite cambiar el nombre real", real_nombre);
 }
 void ejecutaTime(){
-	printf("%s\n", "Muestra los nombres de los canales");
+	printf("%s\n", "Muestra la hora del servidor");
 }
 void ejecutaUser(){
-	printf("%s\n", "Muestra los nombres de los canales");
+	printf("%s\n", "Especifica el username, hostname, servername, realname");
 }
 void ejecutaUsers(){
-	printf("%s\n", "Muestra los nombres de los canales");
+	printf("%s\n", "Muestra los nombres de los usuarios");
 }
 void ejecutaVersion(){
-	printf("%s\n", "Muestra los nombres de los canales");
+	printf("%s\n", "Muestra la version del servidor");
 }
