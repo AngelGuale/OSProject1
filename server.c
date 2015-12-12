@@ -13,6 +13,19 @@ void solicitarOperacion(void *server_pub);
 void imprimirInfo();
 void ejecutarJoin();
 void ejecutarList();
+void ejecutarMotd();
+void ejecutarNames();
+void ejecutarNick();
+void ejecutaPart();
+void ejecutaPrivmsg();
+void ejecutaQuit();
+void ejecutaSetname();
+void ejecutaTime();
+void ejecutaUser();
+void ejecutaUsers();
+void ejecutaVersion();
+
+
 int main (int argc, char *argv [])
 {
     void *context = zmq_ctx_new();
@@ -78,6 +91,39 @@ void solicitarOperacion(void* server_pub){
 	}
 
 
+
+
+	reti = regcomp(&regex, "^motd", 0);
+	if (reti) {
+	    fprintf(stderr, "Could not compile regex\n");
+	  
+	}
+
+	/* Execute regular expression */
+	reti = regexec(&regex, op, 0, NULL, 0);
+	if (!reti) {
+	    puts("Match");
+	   ejecutarMotd();
+	}
+
+
+
+
+	reti = regcomp(&regex, "^names", 0);
+	if (reti) {
+	    fprintf(stderr, "Could not compile regex\n");
+	  
+	}
+
+	/* Execute regular expression */
+	reti = regexec(&regex, op, 0, NULL, 0);
+	if (!reti) {
+
+	   ejecutarNames();
+	}
+
+
+
 }
 /*
 void ejecutarOperacion(int op, void* server_pub){
@@ -126,4 +172,45 @@ void ejecutarJoin(){
 void ejecutarList(){
 
 	printf("%s\n", "Lista todos los canales del server");
+}
+
+
+void ejecutarMotd(){
+
+	printf("%s\n", "Este es el mensaje del dia del server :D");
+}
+
+
+
+void ejecutarNames(){
+
+	printf("%s\n", "Muestra los nombres de los canales");
+}
+
+void ejecutarNick(){
+	printf("%s\n", "Muestra los nombres de los canales");
+}
+void ejecutaPart(){
+	printf("%s\n", "Muestra los nombres de los canales");
+}
+void ejecutaPrivmsg(){
+	printf("%s\n", "Muestra los nombres de los canales");
+}
+void ejecutaQuit(){
+	printf("%s\n", "Muestra los nombres de los canales");
+}
+void ejecutaSetname(){
+	printf("%s\n", "Muestra los nombres de los canales");
+}
+void ejecutaTime(){
+	printf("%s\n", "Muestra los nombres de los canales");
+}
+void ejecutaUser(){
+	printf("%s\n", "Muestra los nombres de los canales");
+}
+void ejecutaUsers(){
+	printf("%s\n", "Muestra los nombres de los canales");
+}
+void ejecutaVersion(){
+	printf("%s\n", "Muestra los nombres de los canales");
 }
