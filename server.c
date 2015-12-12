@@ -10,7 +10,7 @@
  */
 void enviarMensaje();
 void ejecutarOperacion(int op, void* server_pub);
-
+void imprimirInfo();
 int main (int argc, char *argv [])
 {
     void *context = zmq_ctx_new();
@@ -38,27 +38,36 @@ int solicitarOperacion(){
 	char op[500];
 	fgets(op, sizeof(op), stdin);
 
-	if(strcmp(op,"enviar")) return 1;
+	if(strcmp(op,"*enviar\n")==0) return 1;
+	if(strcmp(op,"*info\n")==0) return 2;
 
-
+	return -1;
 }
 
 void ejecutarOperacion(int op, void* server_pub){
 	switch(op){
 		case 1:
 			enviarMensaje(server_pub);
+			break;
+		case 2: 
+			imprimirInfo();
+			break;
 		default:
-			printf("default");
+			printf("No existe tal comando");
 	}
 }
+
 
 void enviarMensaje(void * server_pub){
 	puts("Ingrese mensaje");
 	char mens[100];
-		fgets(mens, sizeof(mens), stdin);
-		    zmq_send(server_pub, "Hello World", 12, 0);
+	fgets(mens, sizeof(mens), stdin);
+	zmq_send(server_pub, "Hello World", 12, 0);
     zmq_send(server_pub, "Hola Mundo", 11, 0);
-
 	printf("%s", mens);
 	}
 
+void imprimirInfo(){
+	printf("Este es el servidor IRC ESPOL\n");
+	printf("Para conectarte puedes hacer uso de los comandos IRC\n");
+}
