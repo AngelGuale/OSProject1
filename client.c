@@ -9,6 +9,29 @@
  * $ gcc -lzmq client.c -o mi_ejecutable
  * debes de tener instalado zmq 4.1
  */
+#include <pthread.h> // aniadir -pthread al compilar
+ #include <assert.h>
+#include <errno.h>
+/* This is our thread function.  It is like main(), but for a thread */
+void *threadFunc( void *client_sub)
+{
+    
+    while(1)
+    {
+     
+    char mens[100]="hola";
+        //fgets(mens, sizeof(mens), stdin);
+
+   int r= zmq_send(client_sub, mens, 100, ZMQ_SNDMORE);
+   
+   printf("%s\n",strerror(errno) );
+
+    }
+
+    return NULL;
+}
+
+
 int main (int argc, char *argv [])
 {
     void *context = zmq_ctx_new();
@@ -18,10 +41,24 @@ int main (int argc, char *argv [])
     //filtar mensajes recibidos. MUY IMPORTANTE
     zmq_setsockopt(client_sub, ZMQ_SUBSCRIBE, "", 0);
 
-    char buffer[100];
+//////
+    pthread_t pth;  // this is our thread identifier
+    int i = 0;
+
+    /* Create worker thread */
+//    pthread_create(&pth,NULL,threadFunc,client_sub);
+
+    /* wait for our thread to finish before continuing */
+//    pthread_join(pth, NULL /* void ** return value could go here */);
+
+    ////
+
+    char buffer[100]="";
     while(1){
+
     zmq_recv(client_sub, buffer, 100, 0);
-    printf("sub got: %s\n", buffer);
+    printf("Usuario escribio: %s", buffer);
+
     }
   //  zmq_recv(client_sub, buffer, 12, 0);
    // printf("sub got: %s\n", buffer);
@@ -30,3 +67,4 @@ int main (int argc, char *argv [])
     zmq_ctx_destroy(context);
     return 0;
 }
+
