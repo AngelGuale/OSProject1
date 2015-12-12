@@ -34,7 +34,7 @@ int main (int argc, char *argv [])
 
 int solicitarOperacion(){
 
-	puts("Ingrese comando\n");
+	puts("Ingrese comando:");
 	char op[500];
 	fgets(op, sizeof(op), stdin);
 
@@ -60,11 +60,14 @@ void ejecutarOperacion(int op, void* server_pub){
 
 void enviarMensaje(void * server_pub){
 	puts("Ingrese mensaje");
+	
 	char mens[100];
+	while(strcmp(mens, "*quit")!=0){
 	fgets(mens, sizeof(mens), stdin);
-	zmq_send(server_pub, "Hello World", 12, 0);
-    zmq_send(server_pub, "Hola Mundo", 11, 0);
-	printf("%s", mens);
+	zmq_send(server_pub, mens, 100, 0);
+   // zmq_send(server_pub, "Hola Mundo", 11, 0);
+	}
+	//printf("%s", mens);
 	}
 
 void imprimirInfo(){

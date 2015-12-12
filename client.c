@@ -18,11 +18,13 @@ int main (int argc, char *argv [])
     //filtar mensajes recibidos. MUY IMPORTANTE
     zmq_setsockopt(client_sub, ZMQ_SUBSCRIBE, "", 0);
 
-    char buffer[10];
-    zmq_recv(client_sub, buffer, 12, 0);
+    char buffer[100];
+    while(1){
+    zmq_recv(client_sub, buffer, 100, 0);
     printf("sub got: %s\n", buffer);
-    zmq_recv(client_sub, buffer, 12, 0);
-    printf("sub got: %s\n", buffer);
+    }
+  //  zmq_recv(client_sub, buffer, 12, 0);
+   // printf("sub got: %s\n", buffer);
 
     zmq_close(client_sub);
     zmq_ctx_destroy(context);
