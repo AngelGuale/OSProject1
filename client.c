@@ -31,37 +31,25 @@ void *threadFunc( void *client_sub)
     return NULL;
 }
 
-void subscriber_thread(void *context){
+static void *subscriber_thread(void *context){
     void *client_sub = zmq_socket (context, ZMQ_SUB);
     zmq_connect(client_sub, "tcp://localhost:5556");
 
     //filtar mensajes recibidos. MUY IMPORTANTE
     zmq_setsockopt(client_sub, ZMQ_SUBSCRIBE, "", 0);
 
-//////
-    pthread_t pth;  // this is our thread identifier
     int i = 0;
+    char *buffer;
+    //Por ahora solo va a recibir 10 mensajes e imprimirlos
+    for(i = 0; i < 10; i++){
 
-    /* Create worker thread */
-//    pthread_create(&pth,NULL,threadFunc,client_sub);
-
-    /* wait for our thread to finish before continuing */
-//    pthread_join(pth, NULL /* void ** return value could go here */);
-
-    ////
-
-    char buffer[100]="";
-    while(1){
-
-    zmq_recv(client_sub, buffer, 100, 0);
-    printf("Usuario escribio: %s", buffer);
-
+        buffer = s_recv(client_sub);
+        if(buffer != NULL){
+            printf("Usuario escribio: %s\n", buffer);
+            free(buffer);
+        }
     }
-  //  zmq_recv(client_sub, buffer, 12, 0);
-   // printf("sub got: %s\n", buffer);
-
     zmq_close(client_sub);
-    zmq_ctx_destroy(context);
 }
 
 
@@ -79,6 +67,14 @@ int main (int argc, char *argv [])
         char *buffer = s_recv (requester);
         printf ("Received World %d\n", request_nbr);
     }
+
+    //iniciar thread subscriber
+    pthread_t subscriber;
+    pthread_create (&subscriber, NULL, subscriber_thread, context);
+
+    //Esperar a que termine el thread subscriber
+    pthread_join(subscriber, NULL);
+
     zmq_close (requester);
     zmq_ctx_destroy (context);
     return 0;
