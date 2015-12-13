@@ -208,37 +208,22 @@ else if(strcmp(op,"version\n")==0) ejecutarVersion();
 
 
 }
-/*
-void ejecutarOperacion(int op, void* server_pub){
-	switch(op){
-		case 1:
-			enviarMensaje(server_pub);
-			break;
-		case 2: 
-			imprimirInfo();
-			break;
-		case 3:
-			ejecutarJoin();
-		default:
-			printf("No existe tal comando");
-	}
-}
 
-*/
+
 void enviarMensaje(void * server_pub){
 	puts("Ingrese mensaje");
 	
 	char mens[100]="hola mundo";
 	while(strcmp(mens, "*quit")!=0){
 
-//	fgets(mens, sizeof(mens), stdin);
-  //  zmq_recv(server_pub, mens, 100, 0);
-//	sleep(10);
-    if(mens[0]!='\0')
-	zmq_send(server_pub, mens, 100, 0);
-   // zmq_send(server_pub, "Hola Mundo", 11, 0);
+		//	fgets(mens, sizeof(mens), stdin);
+		  //  zmq_recv(server_pub, mens, 100, 0);
+		//	sleep(10);
+		    if(mens[0]!='\0')
+			zmq_send(server_pub, mens, 100, 0);
+
 	}
-	//printf("%s", mens);
+
 	}
 
 void imprimirInfo(){
