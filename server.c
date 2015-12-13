@@ -1,5 +1,6 @@
-#include <zmq.h>
+#include "zhelpers.h"
 #include <stdio.h>
+#include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
 #include <regex.h>        
@@ -25,10 +26,7 @@ void ejecutarUser();
 void ejecutarUsers();
 void ejecutarVersion();
 
-
-int main (int argc, char *argv [])
-{
-    void *context = zmq_ctx_new();
+void publisher_thread(void *context){
     void *server_pub = zmq_socket (context, ZMQ_PUB);
     zmq_bind(server_pub, "tcp://*:5556");
 
@@ -41,6 +39,52 @@ int main (int argc, char *argv [])
 
     zmq_close(server_pub);
     zmq_ctx_destroy(context);
+}
+
+static void *
+worker_routine (void *context) {
+    //  Socket to talk to dispatcher
+    void *receiver = zmq_socket (context, ZMQ_REP);
+    zmq_connect (receiver, "inproc://workers");
+
+    while (1) {
+        char *string = s_recv (receiver);
+        printf ("Received request: [%s]\n", string);
+        free (string);
+        //  Do some 'work'
+        sleep (1);
+        //  Send reply back to client
+        s_send (receiver, "World");
+    }
+    zmq_close (receiver);
+    return NULL;
+}
+
+int main (int argc, char *argv [])
+{
+    void *context = zmq_ctx_new ();
+
+    //  Socket to talk to clients
+    void *clients = zmq_socket (context, ZMQ_ROUTER);
+    zmq_bind (clients, "tcp://*:5555");
+
+    //  Socket to talk to workers
+    void *workers = zmq_socket (context, ZMQ_DEALER);
+    zmq_bind (workers, "inproc://workers");
+
+    //  Launch pool of worker threads
+    int thread_nbr;
+    for (thread_nbr = 0; thread_nbr < 5; thread_nbr++) {
+        pthread_t worker;
+        pthread_create (&worker, NULL, worker_routine, context);
+    }
+    //  Connect work threads to client threads via a queue proxy
+    zmq_proxy (clients, workers, NULL);
+
+    //  We never get here, but clean up anyhow
+    zmq_close (clients);
+    zmq_close (workers);
+    zmq_ctx_destroy (context);
     return 0;
 }
 
