@@ -16,14 +16,14 @@ void ejecutarList();
 void ejecutarMotd();
 void ejecutarNames();
 void ejecutarNick(char * nombre);
-void ejecutaPart( int canal);
-void ejecutaPrivmsg(void * receptor, char* mensaje);
-void ejecutaQuit();
-void ejecutaSetname(char* real_nombre);
-void ejecutaTime();
-void ejecutaUser();
-void ejecutaUsers();
-void ejecutaVersion();
+void ejecutarPart( int canal);
+void ejecutarPrivmsg(void * receptor, char* mensaje);
+void ejecutarQuit();
+void ejecutarSetname(char* real_nombre);
+void ejecutarTime();
+void ejecutarUser();
+void ejecutarUsers();
+void ejecutarVersion();
 
 
 int main (int argc, char *argv [])
@@ -57,8 +57,12 @@ void solicitarOperacion(void* server_pub){
 	char op[500];
 	fgets(op, sizeof(op), stdin);
 
-	if(strcmp(op,"*enviar\n")==0) enviarMensaje(server_pub);
-	else if(strcmp(op,"*info\n")==0) imprimirInfo();
+	if(strcmp(op,"enviar\n")==0) enviarMensaje(server_pub);
+	else if(strcmp(op,"info\n")==0) imprimirInfo();
+	else if(strcmp(op,"quit\n")==0) ejecutarQuit();
+else if(strcmp(op,"time\n")==0) ejecutarTime();
+else if(strcmp(op,"users\n")==0) ejecutarUsers();
+else if(strcmp(op,"version\n")==0) ejecutarVersion();
 
 
 	/* Compile regular expression para join*/
@@ -102,13 +106,13 @@ void solicitarOperacion(void* server_pub){
 	/* Execute regular expression */
 	reti = regexec(&regex, op, 0, NULL, 0);
 	if (!reti) {
-	    puts("Match");
+
 	   ejecutarMotd();
 	}
 
 
 
-
+//////////////////////////////////////*****/////////
 	reti = regcomp(&regex, "^names", 0);
 	if (reti) {
 	    fprintf(stderr, "Could not compile regex\n");
@@ -122,6 +126,85 @@ void solicitarOperacion(void* server_pub){
 	   ejecutarNames();
 	}
 
+
+
+//////////////////////////////////////*****/////////
+	reti = regcomp(&regex, "^nick [a-z]{1,50}", 0);
+	if (reti) {
+	    fprintf(stderr, "Could not compile regex\n");
+	  
+	}
+
+	/* Execute regular expression */
+	reti = regexec(&regex, op, 0, NULL, 0);
+	if (!reti) {
+		char nickname[50]="nickname1";
+	   ejecutarNick(nickname);
+	}
+
+
+//////////////////////////////////////*****/////////
+	reti = regcomp(&regex, "^part [1-9]([0-9]*)?", 0);
+	if (reti) {
+	    fprintf(stderr, "Could not compile regex\n");
+	  
+	}
+
+	/* Execute regular expression */
+	reti = regexec(&regex, op, 0, NULL, 0);
+	if (!reti) {
+		int canal=1;
+	   ejecutarPart(canal);
+	}
+
+
+//////////////////////////////////////*****/////////
+	reti = regcomp(&regex, "^privmsg [a-z]* [a-z]*", 0);
+	if (reti) {
+	    fprintf(stderr, "Could not compile regex\n");
+	  
+	}
+
+	/* Execute regular expression */
+	reti = regexec(&regex, op, 0, NULL, 0);
+	if (!reti) {
+		void * destino=NULL;
+		char mensaje[100]="mensaje privado este es";
+	   ejecutarPrivmsg(destino, mensaje);
+	}
+
+
+
+
+//////////////////////////////////////*****/////////
+	reti = regcomp(&regex, "^setname [a-z]*", 0);
+	if (reti) {
+	    fprintf(stderr, "Could not compile regex\n");
+	  
+	}
+
+	/* Execute regular expression */
+	reti = regexec(&regex, op, 0, NULL, 0);
+	if (!reti) {
+		char real_nombre[100]="NombreReal";
+	   ejecutarSetname(real_nombre);
+	}
+
+
+
+//////////////////////////////////////*****/////////
+	reti = regcomp(&regex, "^user [a-z]* [a-z]* [a-z]* [a-z]*", 0);
+	if (reti) {
+	    fprintf(stderr, "Could not compile regex\n");
+	  
+	}
+
+	/* Execute regular expression */
+	reti = regexec(&regex, op, 0, NULL, 0);
+	if (!reti) {
+	
+	   ejecutarUser();
+	}
 
 
 }
@@ -190,27 +273,27 @@ void ejecutarNames(){
 void ejecutarNick(char * nombre){
 	printf("%s %s\n", "Este es el nuevo nombre", nombre);
 }
-void ejecutaPart( int canal){
+void ejecutarPart( int canal){
 	printf("%s %d\n", "Sale del canal", canal);
 }
-void ejecutaPrivmsg(void * receptor, char* mensaje){
+void ejecutarPrivmsg(void * receptor, char* mensaje){
 	printf("%s\n", "Envia un mensaje privado");
 }
-void ejecutaQuit(){
+void ejecutarQuit(){
 	printf("%s\n", "Desconecta el usuario del servidor");
 }
-void ejecutaSetname(char* real_nombre){
+void ejecutarSetname(char* real_nombre){
 	printf("%s %s\n", "Permite cambiar el nombre real", real_nombre);
 }
-void ejecutaTime(){
+void ejecutarTime(){
 	printf("%s\n", "Muestra la hora del servidor");
 }
-void ejecutaUser(){
+void ejecutarUser(){
 	printf("%s\n", "Especifica el username, hostname, servername, realname");
 }
-void ejecutaUsers(){
+void ejecutarUsers(){
 	printf("%s\n", "Muestra los nombres de los usuarios");
 }
-void ejecutaVersion(){
+void ejecutarVersion(){
 	printf("%s\n", "Muestra la version del servidor");
 }
