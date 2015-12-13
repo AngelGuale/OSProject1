@@ -75,7 +75,7 @@ int main (int argc, char *argv [])
     int request_nbr;
     for (request_nbr = 0; request_nbr != 10; request_nbr++) {
         printf ("Sending Hello %d...\n", request_nbr);
-        s_send (requester, "Hello");
+        s_send (requester, "info\n");
         char *buffer = s_recv (requester);
         printf ("Received World %d\n", request_nbr);
     }

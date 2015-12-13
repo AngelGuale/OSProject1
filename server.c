@@ -10,7 +10,7 @@
  * debes de tener instalado zmq 4.1
  */
 void enviarMensaje();
-void solicitarOperacion(void *server_pub);
+void realizarOperacion(void *server_pub, char * op);
 void imprimirInfo();
 void ejecutarJoin();
 void ejecutarList();
@@ -32,7 +32,7 @@ void publisher_thread(void *context){
 
     sleep(1);
     while(1){
-    	solicitarOperacion(server_pub);
+//    	realizarOperacion(server_pub);
     }
 	//    zmq_send(server_pub, "Hello World", 12, 0);
     //zmq_send(server_pub, "Hola Mundo", 11, 0);
@@ -50,8 +50,11 @@ worker_routine (void *context) {
     while (1) {
         char *string = s_recv (receiver);
         printf ("Received request: [%s]\n", string);
+     
         free (string);
         //  Do some 'work'
+        imprimirInfo();
+        
         sleep (1);
         //  Send reply back to client
         s_send (receiver, "World");
@@ -90,23 +93,23 @@ int main (int argc, char *argv [])
 
 
 
-void solicitarOperacion(void* server_pub){
+void realizarOperacion(void* server_pub, char * op){
 
 	regex_t regex;
 	int reti;
 	char msgbuf[100];
 
 
-	puts("Ingrese comando:");
-	char op[500];
-	fgets(op, sizeof(op), stdin);
+	printf("comando: %s\n", op);
+	//char op[500];
+	//fgets(op, sizeof(op), stdin);
 
 	if(strcmp(op,"enviar\n")==0) enviarMensaje(server_pub);
 	else if(strcmp(op,"info\n")==0) imprimirInfo();
 	else if(strcmp(op,"quit\n")==0) ejecutarQuit();
-else if(strcmp(op,"time\n")==0) ejecutarTime();
-else if(strcmp(op,"users\n")==0) ejecutarUsers();
-else if(strcmp(op,"version\n")==0) ejecutarVersion();
+	else if(strcmp(op,"time\n")==0) ejecutarTime();
+	else if(strcmp(op,"users\n")==0) ejecutarUsers();
+	else if(strcmp(op,"version\n")==0) ejecutarVersion();
 
 
 	/* Compile regular expression para join*/
