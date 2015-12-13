@@ -32,10 +32,9 @@ void publisher_thread(void *context){
 
     sleep(1);
     while(1){
-    	solicitarOperacion(server_pub);
+        s_send(server_pub, "Hello Broadcast");
+        sleep(2);
     }
-	//    zmq_send(server_pub, "Hello World", 12, 0);
-    //zmq_send(server_pub, "Hola Mundo", 11, 0);
 
     zmq_close(server_pub);
     zmq_ctx_destroy(context);
@@ -78,6 +77,9 @@ int main (int argc, char *argv [])
         pthread_t worker;
         pthread_create (&worker, NULL, worker_routine, context);
     }
+    pthread_t publisher;
+    pthread_create (&publisher, NULL, publisher_thread, context);
+
     //  Connect work threads to client threads via a queue proxy
     zmq_proxy (clients, workers, NULL);
 
