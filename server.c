@@ -11,33 +11,53 @@
  */
 void enviarMensaje();
 void realizarOperacion(void *server_pub, char * op);
-void imprimirInfo();
-void ejecutarJoin();
-void ejecutarList();
-void ejecutarMotd();
-void ejecutarNames();
-void ejecutarNick(char * nombre);
-void ejecutarPart( int canal);
-void ejecutarPrivmsg(void * receptor, char* mensaje);
-void ejecutarQuit();
-void ejecutarSetname(char* real_nombre);
-void ejecutarTime();
-void ejecutarUser();
-void ejecutarUsers();
-void ejecutarVersion();
+void imprimirInfo(void *receiver);
+void ejecutarJoin(void *receiver);
+void ejecutarList(void *receiver);
+void ejecutarMotd(void *receiver);
+void ejecutarNames(void *receiver);
+void ejecutarNick(void *receiver,char * nombre);
+void ejecutarPart(void *receiver, int canal);
+void ejecutarPrivmsg(void * receiver, char* mensaje);
+void ejecutarQuit(void *receiver);
+void ejecutarSetname(void *receiver,char* real_nombre);
+void ejecutarTime(void *receiver);
+void ejecutarUser(void *receiver);
+void ejecutarUsers(void *receiver);
+void ejecutarVersion(void *receiver);
 
 void publisher_thread(void *context){
     void *server_pub = zmq_socket (context, ZMQ_PUB);
     zmq_bind(server_pub, "tcp://*:5556");
+    
+    void *thread_socket = zmq_socket (context, ZMQ_REP);
+    zmq_bind(thread_socket, "inproc://publisher");
+
 
     sleep(1);
     while(1){
-        s_send(server_pub, "Hello Broadcast");
-        sleep(2);
+        char *msg = s_recv(thread_socket);
+        if(msg != NULL){
+            s_send(server_pub, msg);
+            free(msg);
+            s_send(thread_socket, "OK");
+        }
+
     }
 
     zmq_close(server_pub);
-    zmq_ctx_destroy(context);
+}
+
+/**
+ * funcion para enviar un mensaje al thread donde esta
+ * el socket publisher para que ese mensaje sea enviado
+ * como broadcast a todos los subscribers
+ */
+static void send_broadcast(void *socket, char *msg){
+    s_send (socket, msg);
+    char *string = s_recv(socket);
+    printf("Broadcast status: %s\n",string);
+    free(string);
 }
 
 static void *
@@ -45,6 +65,9 @@ worker_routine (void *context) {
     //  Socket to talk to dispatcher
     void *receiver = zmq_socket (context, ZMQ_REP);
     zmq_connect (receiver, "inproc://workers");
+
+    void *thread_socket = zmq_socket (context, ZMQ_REQ);
+    zmq_connect(thread_socket, "inproc://publisher");
 
     while (1) {
         char *string = s_recv (receiver);
@@ -57,8 +80,12 @@ worker_routine (void *context) {
         
         sleep (1);
         //  Send reply back to client
-        s_send (receiver, "has escrito comando");
+
+      //  s_send (receiver, "has escrito comando");
+      //  send_broadcast(thread_socket, "Some broadcast message...");
+
     }
+
     zmq_close (receiver);
     return NULL;
 }
@@ -96,7 +123,7 @@ int main (int argc, char *argv [])
 
 
 
-void realizarOperacion(void* server_pub, char * op){
+void realizarOperacion(void *receiver, char * op){
 
 	regex_t regex;
 	int reti;
@@ -107,12 +134,12 @@ void realizarOperacion(void* server_pub, char * op){
 	//char op[500];
 	//fgets(op, sizeof(op), stdin);
 
-	if(strcmp(op,"enviar\n")==0) enviarMensaje(server_pub);
-	else if(strcmp(op,"info\n")==0) imprimirInfo();
-	else if(strcmp(op,"quit\n")==0) ejecutarQuit();
-	else if(strcmp(op,"time\n")==0) ejecutarTime();
-	else if(strcmp(op,"users\n")==0) ejecutarUsers();
-	else if(strcmp(op,"version\n")==0) ejecutarVersion();
+	if(strcmp(op,"enviar\n")==0) enviarMensaje(receiver);
+	else if(strcmp(op,"info\n")==0) imprimirInfo(receiver);
+	else if(strcmp(op,"quit\n")==0) ejecutarQuit(receiver);
+	else if(strcmp(op,"time\n")==0) ejecutarTime(receiver);
+	else if(strcmp(op,"users\n")==0) ejecutarUsers(receiver);
+	else if(strcmp(op,"version\n")==0) ejecutarVersion(receiver);
 
 
 	/* Compile regular expression para join*/
@@ -126,7 +153,8 @@ void realizarOperacion(void* server_pub, char * op){
 	reti = regexec(&regex, op, 0, NULL, 0);
 	if (!reti) {
 	    puts("Match");
-	   ejecutarJoin();
+	   ejecutarJoin(receiver);
+	   exit(0);
 	}
 
 
@@ -141,7 +169,8 @@ void realizarOperacion(void* server_pub, char * op){
 	reti = regexec(&regex, op, 0, NULL, 0);
 	if (!reti) {
 	    puts("Match");
-	   ejecutarList();
+	   ejecutarList(receiver);
+	   exit(0);
 	}
 
 
@@ -157,7 +186,8 @@ void realizarOperacion(void* server_pub, char * op){
 	reti = regexec(&regex, op, 0, NULL, 0);
 	if (!reti) {
 
-	   ejecutarMotd();
+	   ejecutarMotd(receiver);
+	   exit(0);
 	}
 
 
@@ -173,7 +203,8 @@ void realizarOperacion(void* server_pub, char * op){
 	reti = regexec(&regex, op, 0, NULL, 0);
 	if (!reti) {
 
-	   ejecutarNames();
+	   ejecutarNames(receiver);
+	   exit(0);
 	}
 
 
@@ -189,7 +220,8 @@ void realizarOperacion(void* server_pub, char * op){
 	reti = regexec(&regex, op, 0, NULL, 0);
 	if (!reti) {
 		char nickname[50]="nickname1";
-	   ejecutarNick(nickname);
+	   ejecutarNick(receiver,nickname);
+	   exit(0);
 	}
 
 
@@ -204,7 +236,8 @@ void realizarOperacion(void* server_pub, char * op){
 	reti = regexec(&regex, op, 0, NULL, 0);
 	if (!reti) {
 		int canal=1;
-	   ejecutarPart(canal);
+	   ejecutarPart(receiver,canal);
+	   exit(0);
 	}
 
 
@@ -218,9 +251,10 @@ void realizarOperacion(void* server_pub, char * op){
 	/* Execute regular expression */
 	reti = regexec(&regex, op, 0, NULL, 0);
 	if (!reti) {
-		void * destino=NULL;
+		
 		char mensaje[100]="mensaje privado este es";
-	   ejecutarPrivmsg(destino, mensaje);
+	   ejecutarPrivmsg(receiver, mensaje);
+	   exit(0);
 	}
 
 
@@ -237,7 +271,8 @@ void realizarOperacion(void* server_pub, char * op){
 	reti = regexec(&regex, op, 0, NULL, 0);
 	if (!reti) {
 		char real_nombre[100]="NombreReal";
-	   ejecutarSetname(real_nombre);
+	   ejecutarSetname(receiver,real_nombre);
+	   exit(0);
 	}
 
 
@@ -253,9 +288,11 @@ void realizarOperacion(void* server_pub, char * op){
 	reti = regexec(&regex, op, 0, NULL, 0);
 	if (!reti) {
 	
-	   ejecutarUser();
+	   ejecutarUser(receiver);
+	   exit(0);
 	}
 
+	s_send(receiver, "Comando no valido");
 
 }
 
@@ -276,59 +313,65 @@ void enviarMensaje(void * server_pub){
 
 	}
 
-void imprimirInfo(){
+void imprimirInfo(void *receiver){
 	printf("Este es el servidor IRC ESPOL\n");
 	printf("Para conectarte puedes hacer uso de los comandos IRC\n");
+	char mensaje[100]="Este es el servidor IRC ESPOL\nPara conectarte puedes hacer uso de los comandos IRC\n";
+	 s_send (receiver, mensaje);
 }
 
-void ejecutarJoin(){
+void ejecutarJoin(void *receiver){
 
 	printf("%s\n", "ejecuta Join se une a un canal");
 }
 
 
-void ejecutarList(){
+void ejecutarList(void *receiver){
 
 	printf("%s\n", "Lista todos los canales del server");
+	char mensaje[100]="Lista de todos los canales del servidor\nCanal 1\nCanal 1\n";
+	 s_send (receiver, mensaje);
 }
 
 
-void ejecutarMotd(){
+void ejecutarMotd(void *receiver){
 
 	printf("%s\n", "Este es el mensaje del dia del server :D");
+	char mensaje[100]="Mensaje del dia: Sistemas operativos es fantástico";
+	 s_send (receiver, mensaje);
 }
 
 
 
-void ejecutarNames(){
+void ejecutarNames(void *receiver){
 
 	printf("%s\n", "Muestra los nombres de los canales");
 }
 
-void ejecutarNick(char * nombre){
+void ejecutarNick(void *receiver,char * nombre){
 	printf("%s %s\n", "Este es el nuevo nombre", nombre);
 }
-void ejecutarPart( int canal){
+void ejecutarPart( void *receiver,int canal){
 	printf("%s %d\n", "Sale del canal", canal);
 }
-void ejecutarPrivmsg(void * receptor, char* mensaje){
+void ejecutarPrivmsg(void * receiver, char* mensaje){
 	printf("%s\n", "Envia un mensaje privado");
 }
-void ejecutarQuit(){
+void ejecutarQuit(void *receiver){
 	printf("%s\n", "Desconecta el usuario del servidor");
 }
-void ejecutarSetname(char* real_nombre){
+void ejecutarSetname(void *receiver,char* real_nombre){
 	printf("%s %s\n", "Permite cambiar el nombre real", real_nombre);
 }
-void ejecutarTime(){
+void ejecutarTime(void *receiver){
 	printf("%s\n", "Muestra la hora del servidor");
 }
-void ejecutarUser(){
+void ejecutarUser(void *receiver){
 	printf("%s\n", "Especifica el username, hostname, servername, realname");
 }
-void ejecutarUsers(){
+void ejecutarUsers(void *receiver){
 	printf("%s\n", "Muestra los nombres de los usuarios");
 }
-void ejecutarVersion(){
+void ejecutarVersion(void *receiver){
 	printf("%s\n", "Muestra la version del servidor");
 }
