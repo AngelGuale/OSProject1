@@ -129,7 +129,7 @@ void realizarOperacion(void *receiver, char * op){
 	int reti;
 	char msgbuf[100];
 
-
+	int is_comando_valido=0;
 	printf("comando: %s\n", op);
 	//char op[500];
 	//fgets(op, sizeof(op), stdin);
@@ -154,7 +154,7 @@ void realizarOperacion(void *receiver, char * op){
 	if (!reti) {
 	    puts("Match");
 	   ejecutarJoin(receiver);
-	   exit(0);
+	   return;
 	}
 
 
@@ -170,7 +170,7 @@ void realizarOperacion(void *receiver, char * op){
 	if (!reti) {
 	    puts("Match");
 	   ejecutarList(receiver);
-	   exit(0);
+	   return;
 	}
 
 
@@ -187,7 +187,7 @@ void realizarOperacion(void *receiver, char * op){
 	if (!reti) {
 
 	   ejecutarMotd(receiver);
-	   exit(0);
+	   return;
 	}
 
 
@@ -204,7 +204,7 @@ void realizarOperacion(void *receiver, char * op){
 	if (!reti) {
 
 	   ejecutarNames(receiver);
-	   exit(0);
+	   return;
 	}
 
 
@@ -221,7 +221,7 @@ void realizarOperacion(void *receiver, char * op){
 	if (!reti) {
 		char nickname[50]="nickname1";
 	   ejecutarNick(receiver,nickname);
-	   exit(0);
+	   return;
 	}
 
 
@@ -237,7 +237,7 @@ void realizarOperacion(void *receiver, char * op){
 	if (!reti) {
 		int canal=1;
 	   ejecutarPart(receiver,canal);
-	   exit(0);
+	   return;
 	}
 
 
@@ -254,7 +254,7 @@ void realizarOperacion(void *receiver, char * op){
 		
 		char mensaje[100]="mensaje privado este es";
 	   ejecutarPrivmsg(receiver, mensaje);
-	   exit(0);
+	   return;
 	}
 
 
@@ -272,7 +272,7 @@ void realizarOperacion(void *receiver, char * op){
 	if (!reti) {
 		char real_nombre[100]="NombreReal";
 	   ejecutarSetname(receiver,real_nombre);
-	   exit(0);
+	   return;
 	}
 
 
@@ -289,7 +289,7 @@ void realizarOperacion(void *receiver, char * op){
 	if (!reti) {
 	
 	   ejecutarUser(receiver);
-	   exit(0);
+	   return;
 	}
 
 	s_send(receiver, "Comando no valido");
@@ -323,6 +323,8 @@ void imprimirInfo(void *receiver){
 void ejecutarJoin(void *receiver){
 
 	printf("%s\n", "ejecuta Join se une a un canal");
+		char mensaje[100]="Unido al canal x\n";
+	 s_send (receiver, mensaje);
 }
 
 

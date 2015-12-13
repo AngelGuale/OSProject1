@@ -75,6 +75,7 @@ int main (int argc, char *argv [])
 
     char mens[100];
     while(1){
+    printf("%s:", "Command");
     fgets(mens, sizeof(mens), stdin);
     s_send (requester, mens);
     char *buffer = s_recv (requester);
