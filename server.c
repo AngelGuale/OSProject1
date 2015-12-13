@@ -29,15 +29,35 @@ void ejecutarVersion();
 void publisher_thread(void *context){
     void *server_pub = zmq_socket (context, ZMQ_PUB);
     zmq_bind(server_pub, "tcp://*:5556");
+    
+    void *thread_socket = zmq_socket (context, ZMQ_REP);
+    zmq_bind(thread_socket, "inproc://publisher");
+
 
     sleep(1);
     while(1){
-        s_send(server_pub, "Hello Broadcast");
-        sleep(2);
+        char *msg = s_recv(thread_socket);
+        if(msg != NULL){
+            s_send(server_pub, msg);
+            free(msg);
+            s_send(thread_socket, "OK");
+        }
+
     }
 
     zmq_close(server_pub);
-    zmq_ctx_destroy(context);
+}
+
+/**
+ * funcion para enviar un mensaje al thread donde esta
+ * el socket publisher para que ese mensaje sea enviado
+ * como broadcast a todos los subscribers
+ */
+static void send_broadcast(void *socket, char *msg){
+    s_send (socket, msg);
+    char *string = s_recv(socket);
+    printf("Broadcast status: %s\n",string);
+    free(string);
 }
 
 static void *
@@ -45,6 +65,9 @@ worker_routine (void *context) {
     //  Socket to talk to dispatcher
     void *receiver = zmq_socket (context, ZMQ_REP);
     zmq_connect (receiver, "inproc://workers");
+
+    void *thread_socket = zmq_socket (context, ZMQ_REQ);
+    zmq_connect(thread_socket, "inproc://publisher");
 
     while (1) {
         char *string = s_recv (receiver);
@@ -54,7 +77,9 @@ worker_routine (void *context) {
         sleep (1);
         //  Send reply back to client
         s_send (receiver, "World");
+        send_broadcast(thread_socket, "Some broadcast message...");
     }
+
     zmq_close (receiver);
     return NULL;
 }

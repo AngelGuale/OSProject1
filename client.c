@@ -60,6 +60,11 @@ int main (int argc, char *argv [])
     void *requester = zmq_socket (context, ZMQ_REQ);
     zmq_connect (requester, "tcp://localhost:5555");
 
+    //iniciar thread subscriber
+    pthread_t subscriber;
+    pthread_create (&subscriber, NULL, subscriber_thread, context);
+
+
     int request_nbr;
     for (request_nbr = 0; request_nbr != 10; request_nbr++) {
         printf ("Sending Hello %d...\n", request_nbr);
@@ -67,10 +72,6 @@ int main (int argc, char *argv [])
         char *buffer = s_recv (requester);
         printf ("Received World %d\n", request_nbr);
     }
-
-    //iniciar thread subscriber
-    pthread_t subscriber;
-    pthread_create (&subscriber, NULL, subscriber_thread, context);
 
     //Esperar a que termine el thread subscriber
     pthread_join(subscriber, NULL);
