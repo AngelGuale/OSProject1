@@ -262,16 +262,21 @@ void realizarOperacion(void *receiver, char * op){
 
 
 //////////////////////////////////////*****/////////
-	reti = regcomp(&regex, "^setname [a-z]*", 0);
+	reti = regcomp(&regex, "^\\(setname\\) \\([a-z]*\\)", 0);
 	if (reti) {
 	    fprintf(stderr, "Could not compile regex\n");
 	  
 	}
 
+	regmatch_t matches[100];
 	/* Execute regular expression */
-	reti = regexec(&regex, op, 0, NULL, 0);
+	reti = regexec(&regex, op, 100, matches, 0);
 	if (!reti) {
 		char real_nombre[100]="NombreReal";
+		char sourceCopy[strlen(op) + 1];
+          strcpy(sourceCopy, op);
+          sourceCopy[matches[2].rm_eo] = 0;
+         sprintf(real_nombre, "%s", sourceCopy + matches[2].rm_so);
 	   ejecutarSetname(receiver,real_nombre);
 	   return;
 	}
