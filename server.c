@@ -57,7 +57,7 @@ worker_routine (void *context) {
         
         sleep (1);
         //  Send reply back to client
-        s_send (receiver, "World");
+        s_send (receiver, "has escrito comando");
     }
     zmq_close (receiver);
     return NULL;

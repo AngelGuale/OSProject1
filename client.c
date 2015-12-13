@@ -65,7 +65,7 @@ int main (int argc, char *argv [])
         printf ("Sending Hello %d...\n", request_nbr);
         s_send (requester, "info\n");
         char *buffer = s_recv (requester);
-        printf ("Received World %d\n", request_nbr);
+        printf ("Received %s %d\n", buffer, request_nbr);
     }
 
     //iniciar thread subscriber
