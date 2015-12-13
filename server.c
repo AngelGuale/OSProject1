@@ -3,7 +3,8 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
-#include <regex.h>        
+#include <regex.h>   
+#include <time.h>        
 /*
  * para compilar este archivo usa: 
  * $ gcc -lzmq server.c -o mi_ejecutable
@@ -18,7 +19,7 @@ void ejecutarMotd(void *receiver);
 void ejecutarNames(void *receiver);
 void ejecutarNick(void *receiver,char * nombre);
 void ejecutarPart(void *receiver, int canal);
-void ejecutarPrivmsg(void * receiver, char* mensaje);
+void ejecutarPrivmsg(void * receiver, char* priv_mensaje);
 void ejecutarQuit(void *receiver);
 void ejecutarSetname(void *receiver,char* real_nombre);
 void ejecutarTime(void *receiver);
@@ -352,28 +353,65 @@ void ejecutarNames(void *receiver){
 
 void ejecutarNick(void *receiver,char * nombre){
 	printf("%s %s\n", "Este es el nuevo nombre", nombre);
+	char mensaje[100];
+	
+		sprintf(mensaje, "Ha modificado su nombre a %s", nombre);
+
+	 s_send (receiver, mensaje);
 }
 void ejecutarPart( void *receiver,int canal){
 	printf("%s %d\n", "Sale del canal", canal);
+	char mensaje[100];
+	sprintf(mensaje, "Ha salido del canal %d", canal);
+
+	 s_send (receiver, mensaje);
 }
-void ejecutarPrivmsg(void * receiver, char* mensaje){
+void ejecutarPrivmsg(void * receiver, char* priv_mensaje){
 	printf("%s\n", "Envia un mensaje privado");
+		char mensaje[100]="Envia un mensaje privado";
+	 s_send (receiver, mensaje);
 }
 void ejecutarQuit(void *receiver){
 	printf("%s\n", "Desconecta el usuario del servidor");
+		char mensaje[100]="Se ha desconectado del servidor";
+	 s_send (receiver, mensaje);
 }
 void ejecutarSetname(void *receiver,char* real_nombre){
 	printf("%s %s\n", "Permite cambiar el nombre real", real_nombre);
+
+	char mensaje[100];
+	sprintf(mensaje,"Permite cambiar el nombre real %s\n", real_nombre);
+	
+	 s_send (receiver, mensaje);
 }
 void ejecutarTime(void *receiver){
 	printf("%s\n", "Muestra la hora del servidor");
+	time_t tiempo= time(0);
+	struct tm *tlocal =localtime(&tiempo);
+	char hora[128];
+	strftime(hora, 128, "%d/%m/%y %H:%M:%S", tlocal);
+	char mensaje[100];
+
+		sprintf(mensaje,"La hora del servidor es %s\n", hora);
+
+	
+	 s_send (receiver, mensaje);
 }
 void ejecutarUser(void *receiver){
 	printf("%s\n", "Especifica el username, hostname, servername, realname");
+	char mensaje[100]="Especifica el username, hostname, servername, realname";
+	
+	 s_send (receiver, mensaje);
 }
 void ejecutarUsers(void *receiver){
 	printf("%s\n", "Muestra los nombres de los usuarios");
+	char mensaje[100]="Los usuarios son: user1, user2";
+	
+	 s_send (receiver, mensaje);
 }
 void ejecutarVersion(void *receiver){
 	printf("%s\n", "Muestra la version del servidor");
+	char mensaje[100]="Esta es la version 1.0.0 del IRC_ESPOL server";
+	
+	 s_send (receiver, mensaje);
 }
