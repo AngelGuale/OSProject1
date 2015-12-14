@@ -54,7 +54,7 @@ void removeData(void *data, struct accList *theList)
   if(theList->head == NULL)                                 //the list is empty
     return;
   else if(theList->head == theList->tail && 
-            theList->list_compare(data, theList->head) == 0)     //there is one element in the list
+            theList->list_compare(data, theList->head->data) == 0)     //there is one element in the list
   {
     free(theList->head);
     theList->head = NULL;
@@ -70,20 +70,20 @@ void removeData(void *data, struct accList *theList)
   }
   else if(theList->list_compare(data, theList->tail->data) == 0)    //the element to be removed is the tail
   {
-    struct accListNode *cur;
-    struct accListNode *prev = NULL;
-    for(cur = theList->head; cur->next != theList->tail; prev = cur, cur = cur->next);
+    struct accListNode *cur = NULL;
+    for(cur = theList->head; cur->next != theList->tail; cur = cur->next);
     free(theList->tail);
-    prev->next = NULL;
-    theList->tail = prev;
+    cur->next = NULL;
+    theList->tail = cur;
     (*theList).size = (*theList).size - 1;
   }
   else                                                     //any other node
   {
-    struct accListNode *prev = NULL;
+    struct accListNode *prev = theList->head;
     struct accListNode *cur;
     for(cur = theList->head->next; cur != theList ->tail; prev = cur, cur = cur->next)
     {
+
       if(theList->list_compare(cur->data, data) == 0)  //this is the node we must free
       {
         prev->next = cur->next;
