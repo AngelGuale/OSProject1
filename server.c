@@ -1,4 +1,6 @@
 #include "zhelpers.h"
+#include "irc_channel.h"
+#include "irc_user.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -28,6 +30,9 @@ void ejecutarUsers(void *receiver);
 void ejecutarVersion(void *receiver);
 void obtenerArgs(char *op, regmatch_t* matches, char *output,int numArg);
 
+/**
+ * Thread para enviar broadcasts.
+ */
 void publisher_thread(void *context){
     void *server_pub = zmq_socket (context, ZMQ_PUB);
     zmq_bind(server_pub, "tcp://*:5556");
@@ -47,7 +52,45 @@ void publisher_thread(void *context){
 
     }
 
+    zmq_close(thread_socket);
     zmq_close(server_pub);
+}
+
+int compare_channels(const void* ch1, const void* ch2, void* extra){
+   struct irc_channel *channel1 = (struct irc_channel *) ch1; 
+   struct irc_channel *channel2 = (struct irc_channel *) ch2; 
+   return strcmp(channel1->nick, channel2->nick);
+}
+
+int compare_users(const void* u1, const void* u2, void* extra){
+   struct irc_user *user1 = (struct irc_user *) u1; 
+   struct irc_user *user2 = (struct irc_user *) u2; 
+   return strcmp(user1->nick, user2->nick);
+}
+
+/**
+ * Thread para operaciones sobre el estado del servidor.
+ */
+void persistance_thread(void *context){
+    
+    void *p_socket = zmq_socket (context, ZMQ_REP);
+    zmq_bind(p_socket, "inproc://estado");
+
+    /*arbol para guardar los canales activos*/
+    struct avl_table *channel_tree = avl_create(compare_channels, NULL, NULL);
+    /*arbol para guardar los usuarios conectados*/
+    struct avl_table *user_tree = avl_create(compare_users, NULL, NULL);
+
+    sleep(1);
+    while(1){
+        char *msg = s_recv(p_socket);
+        if(msg != NULL){
+            s_send(p_socket, "OK");
+        }
+
+    }
+
+    zmq_close(p_socket);
 }
 
 /**
@@ -62,6 +105,9 @@ static void send_broadcast(void *socket, char *msg){
     free(string);
 }
 
+/**
+ * thread para manejar requerimientos que envian los clientes
+ */
 static void *
 worker_routine (void *context) {
     //  Socket to talk to dispatcher
@@ -70,6 +116,9 @@ worker_routine (void *context) {
 
     void *thread_socket = zmq_socket (context, ZMQ_REQ);
     zmq_connect(thread_socket, "inproc://publisher");
+
+    void *p_socket = zmq_socket (context, ZMQ_REQ);
+    zmq_connect(thread_socket, "inproc://estado");
 
     while (1) {
         char *string = s_recv (receiver);
@@ -89,6 +138,8 @@ worker_routine (void *context) {
     }
 
     zmq_close (receiver);
+    zmq_close (thread_socket);
+    zmq_close (p_socket);
     return NULL;
 }
 
@@ -106,12 +157,18 @@ int main (int argc, char *argv [])
 
     //  Launch pool of worker threads
     int thread_nbr;
-    for (thread_nbr = 0; thread_nbr < 5; thread_nbr++) {
+    for (thread_nbr = 0; thread_nbr < 4; thread_nbr++) {
         pthread_t worker;
         pthread_create (&worker, NULL, worker_routine, context);
     }
+
+    //comenzar thread de broadcast
     pthread_t publisher;
     pthread_create (&publisher, NULL, publisher_thread, context);
+
+    //comenzar thread para manejar estado
+    pthread_t estado;
+    pthread_create (&estado, NULL, persistance_thread, context);
 
     //  Connect work threads to client threads via a queue proxy
     zmq_proxy (clients, workers, NULL);

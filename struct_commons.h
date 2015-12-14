@@ -1,3 +1,6 @@
+#ifndef _STRUCT_COMMONS_H_
+#define _STRUCT_COMMONS_H_
+
 #include <string.h>
 
 /**
@@ -15,3 +18,4 @@ static const int MAX_NAME_LEN = 30;
 int comparar_strings(const void *u1, const void *u2){
     return strcmp((char *)u1, (char *)u2);
 }
+#endif

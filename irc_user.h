@@ -2,7 +2,6 @@
 #include "avl.h"
 #include "struct_commons.h"
 
-static const int MAX_NICK_LEN = 30;
 /* Estructura para usuarios */
 struct irc_user
   {
