@@ -13,7 +13,7 @@
 void enviarMensaje();
 void realizarOperacion(void *server_pub, char * op);
 void imprimirInfo(void *receiver);
-void ejecutarJoin(void *receiver);
+void ejecutarJoin(void *receiver, char* canal);
 void ejecutarList(void *receiver);
 void ejecutarMotd(void *receiver);
 void ejecutarNames(void *receiver);
@@ -26,6 +26,7 @@ void ejecutarTime(void *receiver);
 void ejecutarUser(void *receiver);
 void ejecutarUsers(void *receiver);
 void ejecutarVersion(void *receiver);
+void obtenerArgs(char *op, regmatch_t* matches, char *output,int numArg);
 
 void publisher_thread(void *context){
     void *server_pub = zmq_socket (context, ZMQ_PUB);
@@ -134,33 +135,36 @@ void realizarOperacion(void *receiver, char * op){
 	printf("comando: %s\n", op);
 	//char op[500];
 	//fgets(op, sizeof(op), stdin);
-
-	if(strcmp(op,"enviar\n")==0) enviarMensaje(receiver);
-	else if(strcmp(op,"info\n")==0) imprimirInfo(receiver);
-	else if(strcmp(op,"quit\n")==0) ejecutarQuit(receiver);
-	else if(strcmp(op,"time\n")==0) ejecutarTime(receiver);
-	else if(strcmp(op,"users\n")==0) ejecutarUsers(receiver);
-	else if(strcmp(op,"version\n")==0) ejecutarVersion(receiver);
+	regmatch_t matches[100];
+	
+	if(strcmp(op,"/enviar\n")==0) enviarMensaje(receiver);
+	else if(strcmp(op,"/info\n")==0) imprimirInfo(receiver);
+	else if(strcmp(op,"/quit\n")==0) ejecutarQuit(receiver);
+	else if(strcmp(op,"/time\n")==0) ejecutarTime(receiver);
+	else if(strcmp(op,"/users\n")==0) ejecutarUsers(receiver);
+	else if(strcmp(op,"/version\n")==0) ejecutarVersion(receiver);
 
 
 	/* Compile regular expression para join*/
-	reti = regcomp(&regex, "^join [1-9]", 0);
+	reti = regcomp(&regex, "^/join \\([a-zA-Z][a-zA-Z0-9]*\\)", 0);
 	if (reti) {
 	    fprintf(stderr, "Could not compile regex\n");
 	  
 	}
 
 	/* Execute regular expression */
-	reti = regexec(&regex, op, 0, NULL, 0);
+	reti = regexec(&regex, op, 100, matches, 0);
 	if (!reti) {
 	    puts("Match");
-	   ejecutarJoin(receiver);
+	    char canal_str[50];
+	    obtenerArgs(op, matches,canal_str,1); //ŕimer argumento en canal_str
+	   ejecutarJoin(receiver, canal_str);
 	   return;
 	}
 
 
 
-	reti = regcomp(&regex, "^list", 0);
+	reti = regcomp(&regex, "^/list", 0);
 	if (reti) {
 	    fprintf(stderr, "Could not compile regex\n");
 	  
@@ -177,7 +181,7 @@ void realizarOperacion(void *receiver, char * op){
 
 
 
-	reti = regcomp(&regex, "^motd", 0);
+	reti = regcomp(&regex, "^/motd", 0);
 	if (reti) {
 	    fprintf(stderr, "Could not compile regex\n");
 	  
@@ -194,7 +198,7 @@ void realizarOperacion(void *receiver, char * op){
 
 
 //////////////////////////////////////*****/////////
-	reti = regcomp(&regex, "^names", 0);
+	reti = regcomp(&regex, "^/names", 0);
 	if (reti) {
 	    fprintf(stderr, "Could not compile regex\n");
 	  
@@ -211,7 +215,7 @@ void realizarOperacion(void *receiver, char * op){
 
 
 //////////////////////////////////////*****/////////
-	reti = regcomp(&regex, "^nick [a-z]{1,50}", 0);
+	reti = regcomp(&regex, "^/nick \\([a-z]{1,50}\\)", 0);
 	if (reti) {
 	    fprintf(stderr, "Could not compile regex\n");
 	  
@@ -227,7 +231,7 @@ void realizarOperacion(void *receiver, char * op){
 
 
 //////////////////////////////////////*****/////////
-	reti = regcomp(&regex, "^part [1-9]([0-9]*)?", 0);
+	reti = regcomp(&regex, "^/part \\([1-9]([0-9]*)?\\)", 0);
 	if (reti) {
 	    fprintf(stderr, "Could not compile regex\n");
 	  
@@ -243,14 +247,14 @@ void realizarOperacion(void *receiver, char * op){
 
 
 //////////////////////////////////////*****/////////
-	reti = regcomp(&regex, "^privmsg [a-z]* [a-z]*", 0);
+	reti = regcomp(&regex, "^/privmsg \\([a-z]*\\) \\([a-z]*\\)", 0);
 	if (reti) {
 	    fprintf(stderr, "Could not compile regex\n");
 	  
 	}
 
 	/* Execute regular expression */
-	reti = regexec(&regex, op, 0, NULL, 0);
+	reti = regexec(&regex, op, 100, matches, 0);
 	if (!reti) {
 		
 		char mensaje[100]="mensaje privado este es";
@@ -262,31 +266,32 @@ void realizarOperacion(void *receiver, char * op){
 
 
 //////////////////////////////////////*****/////////
-	reti = regcomp(&regex, "^setname [a-z]*", 0);
+	reti = regcomp(&regex, "^/setname \\([a-zA-Z]*\\)", 0);
 	if (reti) {
 	    fprintf(stderr, "Could not compile regex\n");
 	  
 	}
 
 	/* Execute regular expression */
-	reti = regexec(&regex, op, 0, NULL, 0);
+	reti = regexec(&regex, op, 100, matches, 0);
 	if (!reti) {
-		char real_nombre[100]="NombreReal";
-	   ejecutarSetname(receiver,real_nombre);
+		char *real_nombre=malloc(sizeof(char)*50);;
+		obtenerArgs( op, matches, real_nombre, 1);
+		ejecutarSetname(receiver,real_nombre);
 	   return;
 	}
 
 
 
 //////////////////////////////////////*****/////////
-	reti = regcomp(&regex, "^user [a-z]* [a-z]* [a-z]* [a-z]*", 0);
+	reti = regcomp(&regex, "^/user \\([a-z]*\\) \\([a-z]*\\) \\([a-z]*\\) \\([a-z]*\\)", 0);
 	if (reti) {
 	    fprintf(stderr, "Could not compile regex\n");
 	  
 	}
 
 	/* Execute regular expression */
-	reti = regexec(&regex, op, 0, NULL, 0);
+	reti = regexec(&regex, op, 100, matches, 0);
 	if (!reti) {
 	
 	   ejecutarUser(receiver);
@@ -294,6 +299,19 @@ void realizarOperacion(void *receiver, char * op){
 	}
 
 	s_send(receiver, "Comando no valido");
+
+}
+
+//op es la operacion
+//matches es el arreglo que bota la ejecuion de la regex
+//output es la salida
+//numARg es el numero del argumento
+void obtenerArgs(char *op, regmatch_t* matches, char* output, int numArg){
+	char sourceCopy[strlen(op) + 1];
+          strcpy(sourceCopy, op);
+          sourceCopy[matches[numArg].rm_eo] = 0;
+         sprintf(output, "%s", sourceCopy + matches[numArg].rm_so);
+	
 
 }
 
@@ -321,10 +339,11 @@ void imprimirInfo(void *receiver){
 	 s_send (receiver, mensaje);
 }
 
-void ejecutarJoin(void *receiver){
+void ejecutarJoin(void *receiver, char* canal){
 
-	printf("%s\n", "ejecuta Join se une a un canal");
-		char mensaje[100]="Unido al canal x\n";
+	printf("%s %s\n", "ejecuta Join se une a un canal", canal);
+		char mensaje[100];
+		sprintf(mensaje, "Unido al canal %s\n", canal);
 	 s_send (receiver, mensaje);
 }
 
