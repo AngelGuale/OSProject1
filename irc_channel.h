@@ -1,8 +1,7 @@
-#include <string.h>
 #include "accList.h"
 #include "avl.h"
+#include "struct_commons.h"
 
-static const int MAX_NAME_LEN = 30;
 /* Estructura para canales */
 struct irc_channel
   {
@@ -10,14 +9,6 @@ struct irc_channel
     char *pass;            /* Password del canal (opcional) */
     struct accList *users;        /* Lista con los nombres de los usuarios conectados. */
   };
-
-/**
- * Compara dos usuarios. En esta estructura solo se manejan strings
- * con nombres de usuarios asi que se retorna el valor de strcmp.
- */ 
-int comparar_usuarios(const void *u1, const void *u2){
-    return strcmp((char *)u1, (char *)u2);
-}
 
 /**
  * crea un nuevo irc_channel con determinado nombre y pass. Inicializa
@@ -29,7 +20,7 @@ struct irc_channel *irc_channel_create(char *nombre, char *clave){
 
     channel->nick = nombre;
     channel->pass = clave;
-    channel->users = accList_create(comparar_usuarios);
+    channel->users = accList_create(comparar_strings);
 
     return channel;
 }
