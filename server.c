@@ -29,7 +29,7 @@ void ejecutarUser(void *receiver);
 void ejecutarUsers(void *receiver);
 void ejecutarVersion(void *receiver);
 void obtenerArgs(char *op, regmatch_t* matches, char *output,int numArg);
-
+void reenviarOperacion(void *receiver, char* op, void *target);
 /**
  * Thread para enviar broadcasts.
  */
@@ -84,8 +84,12 @@ void persistance_thread(void *context){
     sleep(1);
     while(1){
         char *msg = s_recv(p_socket);
+        printf("%s %s\n", "Persistance recibio ", msg);
         if(msg != NULL){
-            s_send(p_socket, "OK");
+
+
+            //s_send(p_socket, "OK");
+            realizarOperacion(p_socket, msg);
         }
 
     }
@@ -118,13 +122,15 @@ worker_routine (void *context) {
     zmq_connect(thread_socket, "inproc://publisher");
 
     void *p_socket = zmq_socket (context, ZMQ_REQ);
-    zmq_connect(thread_socket, "inproc://estado");
+    zmq_connect(p_socket, "inproc://estado");
 
     while (1) {
         char *string = s_recv (receiver);
         //printf("%s\n", "hola");
-     realizarOperacion(receiver, string);
-       printf ("Received request: [%s]\n", string);
+   //  realizarOperacion(receiver, string);
+     reenviarOperacion(receiver,  string, p_socket);
+
+     printf ("Received request: [%s]\n", string);
      
         free (string);
         //  Do some 'work'
@@ -180,7 +186,15 @@ int main (int argc, char *argv [])
     return 0;
 }
 
+void reenviarOperacion(void *receiver, char* op, void *target){
+	printf("%s\n","reenvi op" );
+	 s_send (target, op);
+	  printf("%s\n", op);
+	 char *resp=s_recv (target);
+	 s_send(receiver, resp);
+		  printf("%s\n", resp);
 
+}
 
 void realizarOperacion(void *receiver, char * op){
 
@@ -393,15 +407,19 @@ void imprimirInfo(void *receiver){
 	printf("Este es el servidor IRC ESPOL\n");
 	printf("Para conectarte puedes hacer uso de los comandos IRC\n");
 	char mensaje[100]="Este es el servidor IRC ESPOL\nPara conectarte puedes hacer uso de los comandos IRC\n";
-	 s_send (receiver, mensaje);
+	
+	s_send (receiver, mensaje);
 }
 
 void ejecutarJoin(void *receiver, char* canal){
 
 	printf("%s %s\n", "ejecuta Join se une a un canal", canal);
-		char mensaje[100];
-		sprintf(mensaje, "Unido al canal %s\n", canal);
-	 s_send (receiver, mensaje);
+	char mensaje[100];
+	sprintf(mensaje, "Unido al canal %s\n", canal);
+	struct irc_channel* nuevo_canal =irc_channel_create(canal, NULL);
+	printf("%s\n",nuevo_canal->nick);
+
+	s_send (receiver, mensaje);
 }
 
 
