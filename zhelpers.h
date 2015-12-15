@@ -45,6 +45,18 @@ s_recv (void *socket) {
     return strdup (buffer);
 }
 
+static char *
+s_recv_noblock (void *socket) {
+    char buffer [256];
+    int size = zmq_recv (socket, buffer, 255, ZMQ_NOBLOCK);
+    if (size == -1)
+        return NULL;
+    if (size > 255)
+        size = 255;
+    buffer [size] = 0;
+    return strdup (buffer);
+}
+
 //  Convert C string to 0MQ string and send to socket
 static int
 s_send (void *socket, char *string) {
@@ -52,6 +64,12 @@ s_send (void *socket, char *string) {
     return size;
 }
 
+//  Convert C string to 0MQ string and send to socket without blocking
+static int
+s_send_noblock (void *socket, char *string) {
+    int size = zmq_send (socket, string, strlen (string), ZMQ_NOBLOCK);
+    return size;
+}
 //  Sends string as 0MQ string, as multipart non-terminal
 static int
 s_sendmore (void *socket, char *string) {
