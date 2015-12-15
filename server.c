@@ -422,8 +422,10 @@ void ejecutarJoin(void *receiver, char* canal,List *channel_list,List *user_list
 	sprintf(mensaje, "Unido al canal %s\n", canal);
 	struct irc_channel* nuevo_canal =irc_channel_create(canal, NULL);
 	listAddNode(channel_list, nodeListNew(nuevo_canal));
-	//printf("%s\n",nuevo_canal->nick);
-
+	
+	  NodeList *iterator;
+    for(iterator = channel_list->header; iterator!=NULL; iterator = iterator->next)
+        printf("%s\n",((struct irc_channel*)nodeListGetCont(iterator))->nick);
 	s_send (receiver, mensaje);
 }
 
