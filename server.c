@@ -7,16 +7,16 @@
 #include <string.h>
 #include <regex.h>   
 #include <time.h>        
-/*
+#include "list.h"/*
  * para compilar este archivo usa: 
  * $ gcc -lzmq server.c -o mi_ejecutable
  * debes de tener instalado zmq 4.1
  */
 void enviarMensaje();
-void realizarOperacion(void *server_pub, char * op);
+void realizarOperacion(void *receiver, char * op,List *channel_list,List *user_list);
 void imprimirInfo(void *receiver);
-void ejecutarJoin(void *receiver, char* canal);
-void ejecutarList(void *receiver);
+void ejecutarJoin(void *receiver, char* canal,List *channel_list,List *user_list);
+void ejecutarList(void *receiver, List *channel_list);
 void ejecutarMotd(void *receiver);
 void ejecutarNames(void *receiver);
 void ejecutarNick(void *receiver,char * nombre);
@@ -30,6 +30,8 @@ void ejecutarUsers(void *receiver);
 void ejecutarVersion(void *receiver);
 void obtenerArgs(char *op, regmatch_t* matches, char *output,int numArg);
 void reenviarOperacion(void *receiver, char* op, void *target);
+
+void imprimirTodos(struct avl_node *nodo);
 /**
  * Thread para enviar broadcasts.
  */
@@ -77,10 +79,12 @@ void persistance_thread(void *context){
     zmq_bind(p_socket, "inproc://estado");
 
     /*arbol para guardar los canales activos*/
-    struct avl_table *channel_tree = avl_create(compare_channels, NULL, NULL);
+   // List *channel_list = avl_create(compare_channels, NULL, NULL);
     /*arbol para guardar los usuarios conectados*/
-    struct avl_table *user_tree = avl_create(compare_users, NULL, NULL);
+    //List *user_list = avl_create(compare_users, NULL, NULL);
 
+    List *channel_list=listNew();
+ List *user_list=listNew();
     sleep(1);
     while(1){
         char *msg = s_recv(p_socket);
@@ -89,7 +93,7 @@ void persistance_thread(void *context){
 
 
             //s_send(p_socket, "OK");
-            realizarOperacion(p_socket, msg);
+            realizarOperacion(p_socket, msg, channel_list, user_list);
         }
 
     }
@@ -188,15 +192,15 @@ int main (int argc, char *argv [])
 
 void reenviarOperacion(void *receiver, char* op, void *target){
 	printf("%s\n","reenvi op" );
-	 s_send (target, op);
-	  printf("%s\n", op);
-	 char *resp=s_recv (target);
-	 s_send(receiver, resp);
-		  printf("%s\n", resp);
+	s_send (target, op);
+	printf("%s\n", op);
+	char *resp=s_recv (target);
+	s_send(receiver, resp);
+	printf("%s\n", resp);
 
 }
 
-void realizarOperacion(void *receiver, char * op){
+void realizarOperacion(void *receiver, char * op,List *channel_list,List *user_list){
 
 	regex_t regex;
 	int reti;
@@ -226,10 +230,10 @@ void realizarOperacion(void *receiver, char * op){
 	/* Execute regular expression */
 	reti = regexec(&regex, op, 100, matches, 0);
 	if (!reti) {
-	    puts("Match");
-	    char canal_str[50];
-	    obtenerArgs(op, matches,canal_str,1); //ŕimer argumento en canal_str
-	   ejecutarJoin(receiver, canal_str);
+		puts("Match");
+		char canal_str[50];
+		obtenerArgs(op, matches,canal_str,1); //ŕimer argumento en canal_str
+	ejecutarJoin(receiver, canal_str, channel_list, user_list);
 	   return;
 	}
 
@@ -245,7 +249,7 @@ void realizarOperacion(void *receiver, char * op){
 	reti = regexec(&regex, op, 0, NULL, 0);
 	if (!reti) {
 	    puts("Match");
-	   ejecutarList(receiver);
+	   ejecutarList(receiver, channel_list);
 	   return;
 	}
 
@@ -411,22 +415,35 @@ void imprimirInfo(void *receiver){
 	s_send (receiver, mensaje);
 }
 
-void ejecutarJoin(void *receiver, char* canal){
+void ejecutarJoin(void *receiver, char* canal,List *channel_list,List *user_list){
 
 	printf("%s %s\n", "ejecuta Join se une a un canal", canal);
 	char mensaje[100];
 	sprintf(mensaje, "Unido al canal %s\n", canal);
 	struct irc_channel* nuevo_canal =irc_channel_create(canal, NULL);
-	printf("%s\n",nuevo_canal->nick);
+	listAddNode(channel_list, nodeListNew(nuevo_canal));
+	//printf("%s\n",nuevo_canal->nick);
 
 	s_send (receiver, mensaje);
 }
 
 
-void ejecutarList(void *receiver){
 
-	printf("%s\n", "Lista todos los canales del server");
-	char mensaje[100]="Lista de todos los canales del servidor\nCanal 1\nCanal 1\n";
+void ejecutarList(void *receiver,List *channel_list){
+	char mensaje[100];
+	//char mensaje[100]="Lista de todos los canales del servidor\nCanal 1\nCanal 1\n";
+	//struct irc_channel *p=channel_list->avl_root->avl_data;
+	//sprintf(mensaje,"Lista de canales:\n%s\n",p->nick );
+	printf("%s\n", mensaje);
+		struct irc_channel *ch;
+	NodeList* p=listGetHeader(channel_list);
+	while(p!=NULL){
+	ch=nodeListGetCont(p);
+	printf("%s\n", ch->nick);
+	p=p->next;
+	}
+	
+	
 	 s_send (receiver, mensaje);
 }
 
