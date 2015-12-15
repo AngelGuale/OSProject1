@@ -58,7 +58,7 @@ void publisher_thread(void *context){
     zmq_close(server_pub);
 }
 
-int compare_channels(const void* ch1, const void* ch2, void* extra){
+int compare_channels(const void* ch1, const void* ch2 ){
    struct irc_channel *channel1 = (struct irc_channel *) ch1; 
    struct irc_channel *channel2 = (struct irc_channel *) ch2; 
    return strcmp(channel1->nick, channel2->nick);
@@ -422,12 +422,16 @@ void ejecutarJoin(void *receiver, char* canal,List *channel_list,List *user_list
 	sprintf(mensaje, "Unido al canal %s\n", canal);
 	char *nombre_canal=malloc(sizeof(char)*100);
 	sprintf(nombre_canal, "%s",canal);
-	struct irc_channel* nuevo_canal =irc_channel_create(nombre_canal, NULL);
+		struct irc_channel* nuevo_canal =irc_channel_create(nombre_canal, NULL);
+		NodeList *existe=listSearch(channel_list, nuevo_canal, compare_channels);
+		if (existe==NULL || listIsEmpty(channel_list)){
+			printf("%s\n","no existe, lo creare" );
 	listAddNode(channel_list, nodeListNew(nuevo_canal));
+		
+	}
+		//falta aniadir usuario	
 	
-	
-	
-   s_send (receiver, mensaje);
+   	s_send (receiver, mensaje);
 }
 
 
@@ -437,15 +441,19 @@ void ejecutarList(void *receiver,List *channel_list){
 	//char mensaje[100]="Lista de todos los canales del servidor\nCanal 1\nCanal 1\n";
 	//struct irc_channel *p=channel_list->avl_root->avl_data;
 	//sprintf(mensaje,"Lista de canales:\n%s\n",p->nick );
+	char canales[100];
 	printf("%s\n", mensaje);
 		struct irc_channel *ch;
 	NodeList* p=listGetHeader(channel_list);
 	while(p!=NULL){
 	ch=nodeListGetCont(p);
+	strcat(canales, ch->nick);
+	strcat(canales,"\n");
 	printf("%s\n", ch->nick);
 	p=p->next;
 	}
 	
+	sprintf(mensaje,"Lista de canales:\n%s\n",canales );
 	
 	 s_send (receiver, mensaje);
 }
