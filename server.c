@@ -375,7 +375,7 @@ void realizarOperacion(void *receiver, char * op,List *channel_list,List *user_l
 	   return;
 	}
 
-	s_send(receiver, "Comando no valido");
+	s_send(receiver, "Comando no valido\n");
 
 }
 

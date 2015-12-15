@@ -41,6 +41,15 @@ static void destroy( GtkWidget *widget,
     gtk_main_quit ();
 }
 
+void appendTextToBuffer(char *text){
+    GtkTextBuffer *textbuffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(chatview));
+    GtkTextIter iter;
+    GtkTextMark *mark= gtk_text_buffer_get_insert (textbuffer);
+    gtk_text_buffer_get_iter_at_mark (textbuffer, &iter, mark);
+    gtk_text_buffer_insert (textbuffer, &iter, text, -1);
+    GtkAdjustment *vadj = gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(scrolledwindow));
+    gtk_adjustment_set_value(vadj, vadj->upper);
+}
 /* callback para cuando se presiona enter en un entry */
 static void enter_callback( GtkWidget *widget,
                                     GtkWidget *entry )
@@ -50,18 +59,13 @@ static void enter_callback( GtkWidget *widget,
         entry_text = strcat(mytxt, gtk_entry_get_text (GTK_ENTRY (entry)));
         entry_text = strcat(mytxt, "\n");
         int status = s_send_noblock(ui_pair, strdup(entry_text));
-	if(status == 0){
-	    appendTextToBuffer(strdup(entry_text));
-            gtk_entry_set_text (GTK_ENTRY(entry), "");
-        } else if(zmq_errno() == EAGAIN)
-	    appendTextToBuffer("EAGAIN");
-        else if(zmq_errno() == ENOTSUP)
-	    appendTextToBuffer("ENOTSUP");
-else if(zmq_errno() == EFSM)
-	    appendTextToBuffer("EFSM");
-else if(zmq_errno() == ETERM)
-	    appendTextToBuffer("ETERM");
+
+        while(status == -1 && zmq_errno() == EAGAIN)
+            status = s_send_noblock(ui_pair, strdup(entry_text));
+
+        gtk_entry_set_text (GTK_ENTRY(entry), "");
 }
+
 gboolean on_idle(gpointer user_data)
 {
         void *ui_socket = (void *)user_data;
@@ -97,12 +101,15 @@ static void *subscriber_thread(void *context){
 }
 
 static void *network_thread(void *context){
+    //envia mensajes al servidor
     void *requester = zmq_socket (context, ZMQ_REQ);
     zmq_connect (requester, "tcp://localhost:5555");
 
+    //recibe mensajes del metodo active de ui thread
     void *bg_pair = zmq_socket (context, ZMQ_PAIR);
-    zmq_bind (requester, "inproc://paired");
+    zmq_bind (bg_pair, "inproc://paired");
 
+    //envia mensajes al metodo idle del ui thread
     void *bg_socket = zmq_socket (context, ZMQ_REQ);
     zmq_connect(bg_socket, "inproc://threading");
 
@@ -135,15 +142,7 @@ static GtkWidget *create_chat_entry(){
     return entry;
 }
 
-void appendTextToBuffer(char *text){
-    GtkTextBuffer *textbuffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(chatview));
-    GtkTextIter iter;
-    GtkTextMark *mark= gtk_text_buffer_get_insert (textbuffer);
-    gtk_text_buffer_get_iter_at_mark (textbuffer, &iter, mark);
-    gtk_text_buffer_insert (textbuffer, &iter, text, -1);
-    GtkAdjustment *vadj = gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(scrolledwindow));
-    gtk_adjustment_set_value(vadj, vadj->upper);
-}
+
 
 
 static GtkWidget *create_chat_text_view(){
