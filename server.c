@@ -15,7 +15,7 @@
 void enviarMensaje();
 void realizarOperacion(void *receiver, char * op,List *channel_list,List *user_list);
 void imprimirInfo(void *receiver);
-void ejecutarJoin(void *receiver, char* canal,List *channel_list,List *user_list);
+void ejecutarJoin(void *receiver, char* canal,List *channel_list,List *user_list, char*usuario);
 void ejecutarList(void *receiver, List *channel_list);
 void ejecutarMotd(void *receiver);
 void ejecutarNames(void *receiver);
@@ -129,13 +129,14 @@ worker_routine (void *context) {
     void *p_socket = zmq_socket (context, ZMQ_REQ);
     zmq_connect(p_socket, "inproc://estado");
 
+  
     while (1) {
         char *string = s_recv (receiver);
-        //printf("%s\n", "hola");
-   //  realizarOperacion(receiver, string);
-     reenviarOperacion(receiver,  string, p_socket);
+   
+  
+  			 reenviarOperacion(receiver,  string, p_socket);
 
-     printf ("Received request: [%s]\n", string);
+   printf ("Received request: [%s]\n", string);
      
         free (string);
         //  Do some 'work'
@@ -213,12 +214,46 @@ void realizarOperacion(void *receiver, char * op,List *channel_list,List *user_l
 	//fgets(op, sizeof(op), stdin);
 	regmatch_t matches[100];
 	
+
+
+	///////**identificar al usuario***///
+
+
+		char usuario[100];
+
+    char string[100];
+    sprintf(string, "%s", op);
+        //////////////////////////////////////***obtiene al usuario**/////////
+			reti = regcomp(&regex, "\\([a-zA-Z0-9]*\\)\\(/.*\\)", 0);
+			if (reti) {
+			    fprintf(stderr, "Could not compile regex\n");
+			  
+			}
+
+			/* Execute regular expression */
+			reti = regexec(&regex, string, 100, matches, 0);
+			if (!reti) {
+			puts("matches");
+		
+			obtenerArgs(string, matches, usuario,1);
+			obtenerArgs(string, matches, op, 2);
+			
+
+			   
+				}
+
+	///////////
+
+
+
+
+
 	if(strcmp(op,"/enviar\n")==0)enviarMensaje(receiver);
-	else if(strcmp(op,"/info\n")==0) imprimirInfo(receiver);
-	else if(strcmp(op,"/quit\n")==0) ejecutarQuit(receiver);
-	else if(strcmp(op,"/time\n")==0) ejecutarTime(receiver);
-	else if(strcmp(op,"/users\n")==0) ejecutarUsers(receiver);
-	else if(strcmp(op,"/version\n")==0) ejecutarVersion(receiver);
+	else if(strcmp(op,"/info\n")==0){ imprimirInfo(receiver); return;}
+	else if(strcmp(op,"/quit\n")==0) {ejecutarQuit(receiver); return ;}
+	else if(strcmp(op,"/time\n")==0){ ejecutarTime(receiver); return;}
+	else if(strcmp(op,"/users\n")==0) {ejecutarUsers(receiver); return ;}
+	else if(strcmp(op,"/version\n")==0){ ejecutarVersion(receiver); return;}
 	else if(strcmp(op,"/create_new_user")==0){create_new_user(receiver, user_list); return;}
 
 
@@ -235,7 +270,7 @@ void realizarOperacion(void *receiver, char * op,List *channel_list,List *user_l
 		puts("Match");
 		char canal_str[50];
 		obtenerArgs(op, matches,canal_str,1); //ŕimer argumento en canal_str
-	ejecutarJoin(receiver, canal_str, channel_list, user_list);
+	ejecutarJoin(receiver, canal_str, channel_list, user_list, usuario);
 	   return;
 	}
 
@@ -375,6 +410,8 @@ void realizarOperacion(void *receiver, char * op,List *channel_list,List *user_l
 	   return;
 	}
 
+	
+
 	s_send(receiver, "Comando no valido");
 
 }
@@ -417,21 +454,24 @@ void imprimirInfo(void *receiver){
 	s_send (receiver, mensaje);
 }
 
-void ejecutarJoin(void *receiver, char* canal,List *channel_list,List *user_list){
+void ejecutarJoin(void *receiver, char* canal,List *channel_list,List *user_list, char*usuario){
 
-	printf("%s %s\n", "ejecuta Join se une a un canal", canal);
+	printf("%s, %s %s\n", usuario, " se ha unido al canal", canal);
 	char mensaje[100];
-	sprintf(mensaje, "Unido al canal %s\n", canal);
+	sprintf(mensaje, "%s %s %s\n",  usuario, "se ha unido al canal:", canal);
 	char *nombre_canal=malloc(sizeof(char)*100);
 	sprintf(nombre_canal, "%s",canal);
 		struct irc_channel* nuevo_canal =irc_channel_create(nombre_canal, NULL);
 		NodeList *existe=listSearch(channel_list, nuevo_canal, compare_channels);
 		if (existe==NULL || listIsEmpty(channel_list)){
 			printf("%s\n","no existe, lo creare" );
-	listAddNode(channel_list, nodeListNew(nuevo_canal));
-		
-	}
+			NodeList *nc=nodeListNew(nuevo_canal);
+	listAddNode(channel_list, nc);
+		existe=nc;
+		}
+	
 		//falta aniadir usuario	
+		irc_channel_add_user(usuario, nodeListGetCont(existe) );
 	
    	s_send (receiver, mensaje);
 }

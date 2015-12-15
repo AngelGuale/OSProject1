@@ -17,7 +17,7 @@ struct irc_user
 struct irc_user *irc_user_create(char *nick, char *nombre){
     struct irc_user *user;
     user = malloc(sizeof *user);
-
+    
     user->nick = nick;
     user->name = nombre;
     user->channels = accList_create(comparar_strings);

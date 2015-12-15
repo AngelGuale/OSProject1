@@ -1,13 +1,13 @@
-#include "accList.h"
 #include "avl.h"
 #include "struct_commons.h"
+#include "list.h"
 
 /* Estructura para canales */
 struct irc_channel
   {
     char *nick;            /* Nombre identificador del canal */
     char *pass;            /* Password del canal (opcional) */
-    struct accList *users;        /* Lista con los nombres de los usuarios conectados. */
+    List *users;        /* Lista con los nombres de los usuarios conectados. */
   };
 
 /**
@@ -20,7 +20,7 @@ struct irc_channel *irc_channel_create(char *nombre, char *clave){
 
     channel->nick = nombre;
     channel->pass = clave;
-    channel->users = accList_create(comparar_strings);
+    channel->users = listNew();
 
     return channel;
 }
@@ -28,19 +28,22 @@ struct irc_channel *irc_channel_create(char *nombre, char *clave){
  * Saca a un usuario del canal
  */
 void irc_channel_rm_user(char* usuario, struct irc_channel *channel){
-   removeData(usuario, channel->users); 
+    listRemoveNode(channel->users,nodeListNew(usuario));
 }
 
 /**
  * Agrega a un usuario al canal
  */
 void irc_channel_add_user(char* usuario, struct irc_channel *channel){
-   appendToEnd(usuario, channel->users); 
+  
+  listAddNode(channel->users,nodeListNew(usuario));
 }
 
 /** genera un string con todos los nombres de usuarios conectados
  * separados por lineas.
  */
+
+ /*
 char *irc_channel_list_users(struct irc_channel *channel){
     int total_users = (*(channel->users)).size;
     if(total_users == 0)
@@ -55,3 +58,4 @@ char *irc_channel_list_users(struct irc_channel *channel){
     return strdup(buff);
 }
 
+*/

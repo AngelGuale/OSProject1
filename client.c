@@ -70,10 +70,13 @@ int main (int argc, char *argv [])
     printf ("Usuario conectado: %s \n", id);
 
     char mens[100];
+    char mens2[100];
     
     while(1){
     printf("%s:", "Command");
-    fgets(mens, sizeof(mens), stdin);
+    fgets(mens2, sizeof(mens2), stdin);
+
+    sprintf(mens, "%s%s", id, mens2);
     s_send (requester, mens);
     char *buffer = s_recv (requester);
     printf ("Server: %s \n", buffer);
