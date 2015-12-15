@@ -420,13 +420,14 @@ void ejecutarJoin(void *receiver, char* canal,List *channel_list,List *user_list
 	printf("%s %s\n", "ejecuta Join se une a un canal", canal);
 	char mensaje[100];
 	sprintf(mensaje, "Unido al canal %s\n", canal);
-	struct irc_channel* nuevo_canal =irc_channel_create(canal, NULL);
+	char *nombre_canal=malloc(sizeof(char)*100);
+	sprintf(nombre_canal, "%s",canal);
+	struct irc_channel* nuevo_canal =irc_channel_create(nombre_canal, NULL);
 	listAddNode(channel_list, nodeListNew(nuevo_canal));
 	
-	  NodeList *iterator;
-    for(iterator = channel_list->header; iterator!=NULL; iterator = iterator->next)
-        printf("%s\n",((struct irc_channel*)nodeListGetCont(iterator))->nick);
-	s_send (receiver, mensaje);
+	
+	
+   s_send (receiver, mensaje);
 }
 
 
