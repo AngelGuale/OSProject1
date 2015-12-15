@@ -65,15 +65,12 @@ int main (int argc, char *argv [])
     pthread_create (&subscriber, NULL, subscriber_thread, context);
 
 
-    // int request_nbr;
-    // for (request_nbr = 0; request_nbr != 5; request_nbr++) {
-    //     printf ("Enviando Info %d \n", request_nbr);
-    //     s_send (requester, "info\n");
-    //     char *buffer = s_recv (requester);
-    //     printf ("Server: %s %d\n", buffer, request_nbr);
-    // }
+    s_send(requester, "/create_new_user");
+    char *id = s_recv (requester);
+    printf ("Usuario conectado: %s \n", id);
 
     char mens[100];
+    
     while(1){
     printf("%s:", "Command");
     fgets(mens, sizeof(mens), stdin);

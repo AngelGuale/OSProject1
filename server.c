@@ -30,6 +30,7 @@ void ejecutarUsers(void *receiver);
 void ejecutarVersion(void *receiver);
 void obtenerArgs(char *op, regmatch_t* matches, char *output,int numArg);
 void reenviarOperacion(void *receiver, char* op, void *target);
+void create_new_user(void* receiver,List* user_list);
 
 void imprimirTodos(struct avl_node *nodo);
 /**
@@ -212,12 +213,13 @@ void realizarOperacion(void *receiver, char * op,List *channel_list,List *user_l
 	//fgets(op, sizeof(op), stdin);
 	regmatch_t matches[100];
 	
-	if(strcmp(op,"/enviar\n")==0) enviarMensaje(receiver);
+	if(strcmp(op,"/enviar\n")==0)enviarMensaje(receiver);
 	else if(strcmp(op,"/info\n")==0) imprimirInfo(receiver);
 	else if(strcmp(op,"/quit\n")==0) ejecutarQuit(receiver);
 	else if(strcmp(op,"/time\n")==0) ejecutarTime(receiver);
 	else if(strcmp(op,"/users\n")==0) ejecutarUsers(receiver);
 	else if(strcmp(op,"/version\n")==0) ejecutarVersion(receiver);
+	else if(strcmp(op,"/create_new_user")==0){create_new_user(receiver, user_list); return;}
 
 
 	/* Compile regular expression para join*/
@@ -536,4 +538,18 @@ void ejecutarVersion(void *receiver){
 	char mensaje[100]="Esta es la version 1.0.0 del IRC_ESPOL server";
 	
 	 s_send (receiver, mensaje);
+}
+
+
+void create_new_user(void *receiver, List* user_list){
+	int id=listGetSize(user_list)+1;
+	char id_str[10];
+	sprintf(id_str, "%d", id);
+	printf("%s %s\n", "Creando usuario", id_str);
+	//char mensaje[100]="Esta es la version 1.0.0 del IRC_ESPOL server";
+	char nombre[50];
+	sprintf(nombre,"Usuario%s", id_str);
+	struct irc_user *user=irc_user_create(nombre, nombre);
+	listAddNode(user_list,nodeListNew(user));
+	 s_send (receiver, nombre);
 }
