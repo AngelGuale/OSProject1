@@ -519,13 +519,7 @@ void ejecutarJoin(void *receiver, char* canal,List *channel_list,List *user_list
     while ((token = strsep(&canal, ",")) != NULL)
     {
         printf("El token actual es %s\n", token);
-        /*
-        char mensaje[100];
-        sprintf(mensaje, "%s %s %s\n",  usuario, "se ha unido al canal:", token);
-        if(strlen(resp) + strlen(mensaje) < 255)
-            strcat(resp, mensaje);
-        char *nombre_canal = strdup(token);
-        */    
+           
         char *nombre_canal = strdup(token);
         struct irc_channel* nuevo_canal =irc_channel_create(nombre_canal, NULL);
         NodeList *existe=listSearch(channel_list, nuevo_canal, compare_channels);

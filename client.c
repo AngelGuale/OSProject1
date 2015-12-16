@@ -7,6 +7,7 @@
 #include <assert.h>
 #include <errno.h>
 #include "zhelpers.h"
+#include "client_structs.h"
 #include <gtk/gtk.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -77,15 +78,20 @@ gboolean on_idle(gpointer user_data)
         return TRUE;
 }
 
-static void *subscriber_thread(void *context){
-    void *client_sub = zmq_socket (context, ZMQ_SUB);
+static void *subscriber_thread(void *arg){
+
+    subscriber_struct *s_struct = (subscriber_struct *) arg;
+    void *client_sub = zmq_socket (s_struct->context, ZMQ_SUB);
     zmq_connect(client_sub, "tcp://localhost:5556");
 
+    //printf("subscribe %s to %s\n", s_struct->id, s_struct->filter);
+    
     //filtar mensajes recibidos. MUY IMPORTANTE
-    zmq_setsockopt(client_sub, ZMQ_SUBSCRIBE, "", 0);
+    zmq_setsockopt(client_sub, ZMQ_SUBSCRIBE, s_struct->id, 0);
+    zmq_setsockopt(client_sub, ZMQ_SUBSCRIBE, s_struct->filter, 0);
 
 
-    void *bg_socket = zmq_socket (context, ZMQ_REQ);
+    void *bg_socket = zmq_socket (s_struct->context, ZMQ_REQ);
     zmq_connect(bg_socket, "inproc://threading");
 
     while(1){
@@ -99,6 +105,31 @@ static void *subscriber_thread(void *context){
     zmq_close(client_sub);
     zmq_close(bg_socket);
 
+}
+
+void create_new_subscriber(void *context, char *id, char *filter){
+    subscriber_struct *s_struct = subscriber_struct_create(context, filter, id);
+    pthread_t subscriber;
+    pthread_create (&subscriber, NULL, subscriber_thread, s_struct);
+}
+
+
+static void join_channels(void *context, char *id, char *channels){
+    char *token;
+    while ((token = strsep(&channels, ",")) != NULL){
+        //printf("current token: %s\n", token);
+        create_new_subscriber(context, id, strdup(token));
+    }
+}
+
+static void process_response(void *context, char *id, char *resp){
+    const char joined_prefix[8] = "joined ";
+    if(strstr(resp, joined_prefix)){
+        char arg[256];
+        memcpy(arg, resp + 7, strlen(resp) -6); 
+        //printf("response awrg: %s\n", arg);
+        join_channels(context, id, arg);
+    }
 }
 
 static void *network_thread(void *context){
@@ -121,19 +152,18 @@ static void *network_thread(void *context){
     char mens[500];
     while(1){
 
-
- 
-
-
         char *buffer = s_recv(bg_pair);
 	s_send(bg_pair, "OK");
 
-     sprintf(mens, "%s%s", id, buffer);
-    s_send (requester, mens);// se adjunta el usuario
+        sprintf(mens, "%s%s", id, buffer);
+        s_send (requester, mens);// se adjunta el usuario
    
-       // s_send(requester, buffer);
+        // s_send(requester, buffer);
         char * resp = s_recv(requester);
 	printf("server resp %s", resp);
+
+        process_response(context, id, resp);
+
         s_send(bg_socket, buffer);
 	s_recv(bg_socket);
         s_send(bg_socket, resp);
@@ -186,53 +216,19 @@ void *threadFunc( void *client_sub)
     return NULL;
 }
 
+
 int main (int argc, char *argv [])
 {
     void *context = zmq_ctx_new ();
     ui_pair = zmq_socket (context, ZMQ_PAIR);
     zmq_connect (ui_pair, "inproc://paired");
 
-
     //iniciar thread subscriber
-    pthread_t subscriber;
-    pthread_create (&subscriber, NULL, subscriber_thread, context);
-
+    
     //iniciar thread network
     pthread_t network;
     pthread_create (&network, NULL, network_thread, context);
-
-    /**
-    s_send(requester, "/create_new_user");
-    char *id = s_recv (requester);
-    printf ("Usuario conectado: %s \n", id);
-
-    char mens[100];
-    char mens2[100];
-    
-<<<<<<< HEAD
-    while(1){
-    printf("%s:", "Command");
-    fgets(mens2, sizeof(mens2), stdin);
-
-    sprintf(mens, "%s%s", id, mens2);
-    s_send (requester, mens);
-    char *buffer = s_recv (requester);
-    printf ("Server: %s \n", buffer);
-}
-=======
-    while(1) {
-        printf("%s:", "Command");
-        fgets(mens, sizeof(mens), stdin);
-        s_send (requester, mens);
-        char *buffer = s_recv (requester);
-        printf ("Server: %s \n", buffer);
-    }
->>>>>>> gtk
-    //Esperar a que termine el thread subscriber
-    pthread_join(subscriber, NULL);
-
-    */
-    
+        
    /* GtkWidget is the storage type for widgets */
     GtkWidget *window;
     
@@ -293,8 +289,7 @@ int main (int argc, char *argv [])
     /* and the window */
     gtk_widget_show (window);
 
-
-    
+    process_response(context, "Gabriel", "joined archlinux,haskell,anime,metal");
     /* All GTK applications must have a gtk_main(). Control ends here
      * and waits for an event to occur (like a key press or
      * mouse event). */
