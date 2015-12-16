@@ -26,7 +26,7 @@ void ejecutarQuit(void *receiver);
 void ejecutarSetname(void *receiver,char* real_nombre);
 void ejecutarTime(void *receiver);
 void ejecutarUser(void *receiver);
-void ejecutarUsers(void *receiver);
+void ejecutarUsers(void *receiver, List *user_list);
 void ejecutarVersion(void *receiver);
 void obtenerArgs(char *op, regmatch_t* matches, char *output,int numArg);
 void reenviarOperacion(void *receiver, char* op, void *target);
@@ -252,7 +252,7 @@ void realizarOperacion(void *receiver, char * op,List *channel_list,List *user_l
 	else if(strcmp(op,"/info\n")==0){ imprimirInfo(receiver); return;}
 	else if(strcmp(op,"/quit\n")==0) {ejecutarQuit(receiver); return ;}
 	else if(strcmp(op,"/time\n")==0){ ejecutarTime(receiver); return;}
-	else if(strcmp(op,"/users\n")==0) {ejecutarUsers(receiver); return ;}
+	else if(strcmp(op,"/users\n")==0) {ejecutarUsers(receiver, user_list); return ;}
 	else if(strcmp(op,"/version\n")==0){ ejecutarVersion(receiver); return;}
 	else if(strcmp(op,"/create_new_user")==0){create_new_user(receiver, user_list); return;}
 
@@ -471,7 +471,10 @@ void ejecutarJoin(void *receiver, char* canal,List *channel_list,List *user_list
 		}
 	
 		//falta aniadir usuario	
-		irc_channel_add_user(usuario, nodeListGetCont(existe) );
+		char *nombre_usuario=malloc(sizeof(char)*100);
+		sprintf(nombre_usuario, "%s",usuario);
+	
+		irc_channel_add_user(nombre_usuario, nodeListGetCont(existe) );
 	
    	s_send (receiver, mensaje);
 }
@@ -567,11 +570,24 @@ void ejecutarUser(void *receiver){
 	
 	 s_send (receiver, mensaje);
 }
-void ejecutarUsers(void *receiver){
+void ejecutarUsers(void *receiver, List *user_list){
 	printf("%s\n", "Muestra los nombres de los usuarios");
 	char mensaje[100]="Los usuarios son: user1, user2";
+	char usuarios[100];
+	printf("%s\n", mensaje);
+		struct irc_user *ch;
+	NodeList* p=listGetHeader(user_list);
+	while(p!=NULL){
+	ch=nodeListGetCont(p);
+	strcat(usuarios, ch->nick);
+	strcat(usuarios,"\n");
+	printf("%s\n", ch->nick);
+	p=p->next;
+	}
 	
+	sprintf(mensaje,"Lista de canales:\n%s\n",usuarios );
 	 s_send (receiver, mensaje);
+
 }
 void ejecutarVersion(void *receiver){
 	printf("%s\n", "Muestra la version del servidor");
@@ -587,7 +603,7 @@ void create_new_user(void *receiver, List* user_list){
 	sprintf(id_str, "%d", id);
 	printf("%s %s\n", "Creando usuario", id_str);
 	//char mensaje[100]="Esta es la version 1.0.0 del IRC_ESPOL server";
-	char nombre[50];
+	char *nombre=malloc(sizeof(char)*100);
 	sprintf(nombre,"Usuario%s", id_str);
 	struct irc_user *user=irc_user_create(nombre, nombre);
 	listAddNode(user_list,nodeListNew(user));
