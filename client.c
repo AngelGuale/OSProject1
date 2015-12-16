@@ -78,6 +78,16 @@ gboolean on_idle(gpointer user_data)
         return TRUE;
 }
 
+static int isNotQuitSubscription(char *msg, char* filter, char *id){
+    char buffer[256] = "";
+    strcat(buffer, "DELETESUB:");
+    strcat(buffer, filter);
+    strcat(buffer, ":");
+    strcat(buffer, id);
+    //printf("%s|%s\n", msg, buffer); 
+    return strcmp(msg, buffer);
+}
+
 static void *subscriber_thread(void *arg){
 
     subscriber_struct *s_struct = (subscriber_struct *) arg;
@@ -96,10 +106,16 @@ static void *subscriber_thread(void *arg){
 
     while(1){
         char *buffer = s_recv(client_sub);
-        printf("PUB: %s\n", buffer);
-        s_send(bg_socket, buffer);
-        s_recv(bg_socket);
-	free(buffer);
+        if(isNotQuitSubscription(buffer, s_struct->filter, s_struct->id)){
+            printf("PUB: %s\n", buffer);
+            s_send(bg_socket, buffer);
+            s_recv(bg_socket);
+	    free(buffer);
+        } else {
+            //terminar proceso
+	    free(buffer);
+            break;
+        }
     }
 
     zmq_close(client_sub);
