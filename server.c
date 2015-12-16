@@ -485,7 +485,7 @@ void obtenerArgs(char *op, regmatch_t* matches, char* output, int numArg){
 void enviarMensaje(void * server_pub){
 	puts("Ingrese mensaje");
 	
-	char mens[100]="hola mundo";
+	char mens[100]="hola mundo\n";
 	while(strcmp(mens, "*quit")!=0){
 
 		//	fgets(mens, sizeof(mens), stdin);
@@ -558,9 +558,9 @@ void ejecutarList(void *receiver,List *channel_list){
 
 void ejecutarMotd(void *receiver){
 
-	printf("%s\n", "Este es el mensaje del dia del server :D");
-	char mensaje[100]="Mensaje del dia: Sistemas operativos es fantástico";
-	 s_send (receiver, mensaje);
+    printf("%s\n", "Este es el mensaje del dia del server :D");
+    char mensaje[100]="Mensaje del dia: Sistemas operativos es fantástico\n";
+     s_send (receiver, mensaje);
 }
 
 
@@ -573,10 +573,8 @@ void ejecutarNames(void *receiver){
 void ejecutarNick(void *receiver,char * nombre){
 	printf("%s %s\n", "Este es el nuevo nombre", nombre);
 	char mensaje[100];
-	
-		sprintf(mensaje, "Ha modificado su nombre a %s", nombre);
-
-	 s_send (receiver, mensaje);
+        sprintf(mensaje, "Ha modificado su nombre a %s\n", nombre);
+	s_send (receiver, mensaje);
 }
 void ejecutarPart( void *receiver,int canal){
 	printf("%s %d\n", "Sale del canal", canal);
@@ -587,12 +585,12 @@ void ejecutarPart( void *receiver,int canal){
 }
 void ejecutarPrivmsg(void * receiver, char* priv_mensaje){
 	printf("%s\n", "Envia un mensaje privado");
-		char mensaje[100]="Envia un mensaje privado";
+		char mensaje[100]="Envia un mensaje privado\n";
 	 s_send (receiver, mensaje);
 }
 void ejecutarQuit(void *receiver){
 	printf("%s\n", "Desconecta el usuario del servidor");
-		char mensaje[100]="Se ha desconectado del servidor";
+		char mensaje[100]="Se ha desconectado del servidor\n";
 	 s_send (receiver, mensaje);
 }
 void ejecutarSetname(void *receiver,char* real_nombre){
@@ -643,7 +641,7 @@ void ejecutarUsers(void *receiver, List *user_list){
 }
 void ejecutarVersion(void *receiver){
 	printf("%s\n", "Muestra la version del servidor");
-	char mensaje[100]="Esta es la version 1.0.0 del IRC_ESPOL server";
+	char mensaje[100]="Esta es la version 1.0.0 del IRC_ESPOL server\n";
 	
 	 s_send (receiver, mensaje);
 }
