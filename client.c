@@ -88,6 +88,14 @@ static int isNotQuitSubscription(char *msg, char* filter, char *id){
     return strcmp(msg, buffer);
 }
 
+char *rm_private_token(char *msg){
+    if(strstr(msg, ";pRiV;") != NULL){
+        strsep(&msg, ";pRiV;");
+       char *resp = strsep(&msg, ";pRiV;");
+       return resp;
+    }
+    return msg;
+}
 static void *subscriber_thread(void *arg){
 
     subscriber_struct *s_struct = (subscriber_struct *) arg;
@@ -107,6 +115,8 @@ static void *subscriber_thread(void *arg){
     while(1){
         char *buffer = s_recv(client_sub);
         if(isNotQuitSubscription(buffer, s_struct->filter, s_struct->id)){
+            printf("PUB: %s\n", buffer);
+            buffer = rm_private_token(buffer);
             printf("PUB: %s\n", buffer);
             s_send(bg_socket, buffer);
             s_recv(bg_socket);

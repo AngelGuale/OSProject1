@@ -49,6 +49,7 @@ void publisher_thread(void *context){
 
         char *msg = s_recv(thread_socket);
         s_send(server_pub, msg);
+        printf("sent broadcast: %s", msg);
         free(msg);
         s_send(thread_socket, "OK");
 
@@ -145,10 +146,14 @@ worker_routine (void *context) {
     return NULL;
 }
 
+int isPrivMessage(char *op){
+   if(strstr(op, "/privmsg"))
+       return 1;
+    return 0;
+}
 int main (int argc, char *argv [])
 {
     void *context = zmq_ctx_new ();
-
     //  Socket to talk to clients
     void *clients = zmq_socket (context, ZMQ_ROUTER);
     zmq_bind (clients, "tcp://*:5555");
@@ -182,8 +187,57 @@ int main (int argc, char *argv [])
     return 0;
 }
 
+char *parsePrivMsg(char *op){
+    char *fullmsg = strdup(op);
+    char *sender = strsep(&fullmsg, "/");
+    if(sender == NULL)
+        return NULL; //manejar el error
+    strsep(&fullmsg, " "); //quitar /privmsg 
+    char *target = strsep(&fullmsg, " "); //remitente
+    if(target == NULL)
+        return NULL; //manejar el error
+    char msg[200] = "";
+    char *token;
+    int empty = 1;
+    //reconstruir mensaje original
+    while(token = strsep(&fullmsg, " ")){
+        if(empty){
+            strcat(msg, token);
+        }else
+        {
+            strcat(msg, " ");
+            strcat(msg, token);
+        }
+        empty = 0;
+     }
+     printf("sender: %s\n", sender);
+     printf("target: %s\n", target);
+     printf("msg: %s\n", msg);
+
+     //construir mensaje para pasar al pub
+     char res[256] = "";
+     strcat(res, target); 
+     strcat(res, "^");
+     strcat(res, sender);
+     strcat(res, " ");
+     strcat(res, msg);
+
+     char* respuesta = strdup(res);
+     printf("broadcast: %s\n", respuesta);
+     return respuesta;
+}
 void reenviarOperacion(void *receiver, char* op, void *p_socket, void *thread_socket){
 	
+    if(isPrivMessage(op)){
+        char *pub_msg = parsePrivMsg(op);
+        if(pub_msg != NULL){
+            s_send (thread_socket, pub_msg);
+            char *resp=s_recv (thread_socket);
+            s_send(receiver, resp);
+            printf("responder a cliente con: %s\n", resp);
+            return;
+        }
+    }        
     if(isOperacion(op)){
         printf("%s\n","reenviado a persistence" );
         s_send (p_socket, op);
@@ -398,20 +452,7 @@ void realizarOperacion(void *receiver, char * op,List *channel_list,List *user_l
 
 
 //////////////////////////////////////*****/////////
-	reti = regcomp(&regex, "^/privmsg \\([a-z]*\\) \\([a-z]*\\)", 0);
-	if (reti) {
-	    fprintf(stderr, "Could not compile regex\n");
-	  
-	}
-
-	/* Execute regular expression */
-	reti = regexec(&regex, op, 100, matches, 0);
-	if (!reti) {
-		
-		char mensaje[100]="mensaje privado este es";
-	   ejecutarPrivmsg(receiver, mensaje);
-	   return;
-	}
+	
 
 
 
