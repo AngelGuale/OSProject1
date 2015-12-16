@@ -90,6 +90,7 @@ static void *subscriber_thread(void *context){
 
     while(1){
         char *buffer = s_recv(client_sub);
+        printf("PUB: %s\n", buffer);
         s_send(bg_socket, buffer);
         s_recv(bg_socket);
 	free(buffer);
@@ -191,7 +192,6 @@ int main (int argc, char *argv [])
     //iniciar thread network
     pthread_t network;
     pthread_create (&network, NULL, network_thread, context);
-
 
     /**
     s_send(requester, "/create_new_user");

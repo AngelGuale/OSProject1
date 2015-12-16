@@ -29,7 +29,7 @@ void ejecutarUser(void *receiver);
 void ejecutarUsers(void *receiver, List *user_list);
 void ejecutarVersion(void *receiver);
 void obtenerArgs(char *op, regmatch_t* matches, char *output,int numArg);
-void reenviarOperacion(void *receiver, char* op, void *target);
+void reenviarOperacion(void *receiver, char* op, void *p_socket, void *thread_socket);
 void create_new_user(void* receiver,List* user_list);
 
 void imprimirTodos(struct avl_node *nodo);
@@ -129,12 +129,12 @@ worker_routine (void *context) {
     void *p_socket = zmq_socket (context, ZMQ_REQ);
     zmq_connect(p_socket, "inproc://estado");
 
-  
+	  
     while (1) {
         char *string = s_recv (receiver);
    
   
-  			 reenviarOperacion(receiver,  string, p_socket);
+  			 reenviarOperacion(receiver,  string, p_socket, thread_socket);
 
    printf ("Received request: [%s]\n", string);
      
@@ -192,14 +192,65 @@ int main (int argc, char *argv [])
     return 0;
 }
 
-void reenviarOperacion(void *receiver, char* op, void *target){
-	printf("%s\n","reenvi op" );
-	s_send (target, op);
+void reenviarOperacion(void *receiver, char* op, void *p_socket, void *thread_socket){
+	
+	if(isOperacion(op)){
+	printf("%s\n","reenviado a persistence" );
+	s_send (p_socket, op);
 	printf("%s\n", op);
-	char *resp=s_recv (target);
+	char *resp=s_recv (p_socket);
 	s_send(receiver, resp);
 	printf("%s\n", resp);
 
+	}else{
+		printf("%s\n","reenviado a publisher" );
+	s_send (thread_socket, op);
+	printf("%s\n", op);
+	char *resp=s_recv (thread_socket);
+	s_send(receiver, resp);
+	printf("%s\n", resp);
+
+
+	}
+}
+
+
+int isOperacion(char *op){
+
+		regex_t regex;
+	int reti;
+	char msgbuf[100];
+
+
+	regmatch_t matches[100];
+	
+
+
+
+
+    char string[100];
+    sprintf(string, "%s", op);
+        //////////////////////////////////////***obtiene al usuario**/////////
+			reti = regcomp(&regex, "\\([a-zA-Z0-9]*\\)\\?\\(/.*\\)", 0);
+			if (reti) {
+			    fprintf(stderr, "Could not compile regex\n");
+			  
+			}
+
+			/* Execute regular expression */
+			reti = regexec(&regex, string, 100, matches, 0);
+			if (!reti) {
+			puts("matches");
+			return 1;
+			//obtenerArgs(string, matches, usuario,1);
+			//obtenerArgs(string, matches, op, 2);
+						   
+				}
+				return 0;
+
+	///////////
+
+	
 }
 
 void realizarOperacion(void *receiver, char * op,List *channel_list,List *user_list){
@@ -410,9 +461,12 @@ void realizarOperacion(void *receiver, char * op,List *channel_list,List *user_l
 	   return;
 	}
 
-	s_send(receiver, "Comando no valido\n");
+
+
+	//s_send(receiver, "Comando no valido\n");
 
 }
+
 
 //op es la operacion
 //matches es el arreglo que bota la ejecuion de la regex
