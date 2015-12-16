@@ -112,6 +112,11 @@ static void *network_thread(void *context){
     //envia mensajes al metodo idle del ui thread
     void *bg_socket = zmq_socket (context, ZMQ_REQ);
     zmq_connect(bg_socket, "inproc://threading");
+ 
+    s_send(requester, "/create_new_user");
+    char *id = s_recv (requester);
+    printf ("Usuario conectado: %s \n", id);
+
 
     while(1){
         char *buffer = s_recv(bg_pair);
