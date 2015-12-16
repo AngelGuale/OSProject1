@@ -46,12 +46,11 @@ void publisher_thread(void *context){
 
     sleep(1);
     while(1){
+
         char *msg = s_recv(thread_socket);
-        if(msg != NULL){
-            s_send(server_pub, msg);
-            free(msg);
-            s_send(thread_socket, "OK");
-        }
+        s_send(server_pub, msg);
+        free(msg);
+        s_send(thread_socket, "OK");
 
     }
 
@@ -132,21 +131,12 @@ worker_routine (void *context) {
 	  
     while (1) {
         char *string = s_recv (receiver);
-   
-  
-  			 reenviarOperacion(receiver,  string, p_socket, thread_socket);
-
-   printf ("Received request: [%s]\n", string);
+        reenviarOperacion(receiver,  string, p_socket, thread_socket);
+        printf ("Received request: [%s]\n", string);
      
         free (string);
-        //  Do some 'work'
         
-        sleep (1);
-        //  Send reply back to client
-
-      //  s_send (receiver, "has escrito comando");
-      //  send_broadcast(thread_socket, "Some broadcast message...");
-
+        //sleep (1);
     }
 
     zmq_close (receiver);
@@ -194,24 +184,21 @@ int main (int argc, char *argv [])
 
 void reenviarOperacion(void *receiver, char* op, void *p_socket, void *thread_socket){
 	
-	if(isOperacion(op)){
-	printf("%s\n","reenviado a persistence" );
-	s_send (p_socket, op);
-	printf("%s\n", op);
-	char *resp=s_recv (p_socket);
-	s_send(receiver, resp);
-	printf("responder a cliente con: %s\n", resp);
-
-	}else{
-		printf("%s\n","reenviado a publisher" );
-	s_send (thread_socket, op);
-	printf("%s\n", op);
-	char *resp=s_recv (thread_socket);
-	s_send(receiver, resp);
-	printf("%s\n", resp);
-
-
-	}
+    if(isOperacion(op)){
+        printf("%s\n","reenviado a persistence" );
+        s_send (p_socket, op);
+        printf("%s\n", op);
+        char *resp=s_recv (p_socket);
+        s_send(receiver, resp);
+        printf("responder a cliente con: %s\n", resp);
+    }else{
+        printf("%s\n","reenviado a publisher" );
+        s_send (thread_socket, op);
+        printf("%s\n", op);
+        char *resp=s_recv (thread_socket);
+        s_send(receiver, resp);
+        printf("%s\n", resp);
+    }
 }
 
 

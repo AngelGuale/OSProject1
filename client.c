@@ -149,25 +149,27 @@ static void *network_thread(void *context){
     char *id = s_recv (requester);
     printf ("Usuario conectado: %s \n", id);
 
-    char mens[500];
+    char mens[256];
     while(1){
 
         char *buffer = s_recv(bg_pair);
 	s_send(bg_pair, "OK");
 
-        sprintf(mens, "%s%s", id, buffer);
+        sprintf(mens, "%s: %s", id, buffer);
         s_send (requester, mens);// se adjunta el usuario
    
         // s_send(requester, buffer);
         char * resp = s_recv(requester);
 	printf("server resp %s", resp);
 
-        process_response(context, id, resp);
+        if(strcmp(resp, "OK")){
+            process_response(context, id, resp);
 
-        s_send(bg_socket, buffer);
-	s_recv(bg_socket);
-        s_send(bg_socket, resp);
-	s_recv(bg_socket);
+            s_send(bg_socket, buffer);
+            s_recv(bg_socket);
+            s_send(bg_socket, resp);
+            s_recv(bg_socket);
+        }
     }
 
     zmq_close(requester);
@@ -289,7 +291,6 @@ int main (int argc, char *argv [])
     /* and the window */
     gtk_widget_show (window);
 
-    process_response(context, "Gabriel", "joined archlinux,haskell,anime,metal");
     /* All GTK applications must have a gtk_main(). Control ends here
      * and waits for an event to occur (like a key press or
      * mouse event). */
