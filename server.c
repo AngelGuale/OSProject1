@@ -200,7 +200,7 @@ void reenviarOperacion(void *receiver, char* op, void *p_socket, void *thread_so
 	printf("%s\n", op);
 	char *resp=s_recv (p_socket);
 	s_send(receiver, resp);
-	printf("%s\n", resp);
+	printf("responder a cliente con: %s\n", resp);
 
 	}else{
 		printf("%s\n","reenviado a publisher" );
@@ -309,8 +309,9 @@ void realizarOperacion(void *receiver, char * op,List *channel_list,List *user_l
 
 
 	/* Compile regular expression para join*/
-	reti = regcomp(&regex, "^/join \\([a-zA-Z][a-zA-Z0-9]*\\)", 0);
+	reti = regcomp(&regex, "^/join \\([a-zA-Z0-9,]*\\)", 0);
 	if (reti) {
+            printf("JOIN regex error: %d\n", reti);
 	    fprintf(stderr, "Could not compile regex\n");
 	  
 	}
@@ -318,10 +319,10 @@ void realizarOperacion(void *receiver, char * op,List *channel_list,List *user_l
 	/* Execute regular expression */
 	reti = regexec(&regex, op, 100, matches, 0);
 	if (!reti) {
-		puts("Match");
-		char canal_str[50];
-		obtenerArgs(op, matches,canal_str,1); //ŕimer argumento en canal_str
-	ejecutarJoin(receiver, canal_str, channel_list, user_list, usuario);
+            puts("JOIN Match");
+	    char canal_str[50];
+	    obtenerArgs(op, matches,canal_str,1); //ŕimer argumento en canal_str
+	    ejecutarJoin(receiver, canal_str, channel_list, user_list, usuario);
 	   return;
 	}
 
@@ -463,7 +464,7 @@ void realizarOperacion(void *receiver, char * op,List *channel_list,List *user_l
 
 
 
-	//s_send(receiver, "Comando no valido\n");
+	s_send(receiver, "Comando no valido\n");
 
 }
 
@@ -507,28 +508,41 @@ void imprimirInfo(void *receiver){
 }
 
 void ejecutarJoin(void *receiver, char* canal,List *channel_list,List *user_list, char*usuario){
+        
+    char resp[256];
+    strcat(resp, "joined ");
+    strcat(resp, canal);
+    strcat(resp, "\n");
 
-	printf("%s, %s %s\n", usuario, " se ha unido al canal", canal);
-	char mensaje[100];
-	sprintf(mensaje, "%s %s %s\n",  usuario, "se ha unido al canal:", canal);
-	char *nombre_canal=malloc(sizeof(char)*100);
-	sprintf(nombre_canal, "%s",canal);
-		struct irc_channel* nuevo_canal =irc_channel_create(nombre_canal, NULL);
-		NodeList *existe=listSearch(channel_list, nuevo_canal, compare_channels);
-		if (existe==NULL || listIsEmpty(channel_list)){
-			printf("%s\n","no existe, lo creare" );
-			NodeList *nc=nodeListNew(nuevo_canal);
-	listAddNode(channel_list, nc);
-		existe=nc;
-		}
-	
-		//falta aniadir usuario	
-		char *nombre_usuario=malloc(sizeof(char)*100);
-		sprintf(nombre_usuario, "%s",usuario);
-	
-		irc_channel_add_user(nombre_usuario, nodeListGetCont(existe) );
-	
-   	s_send (receiver, mensaje);
+    printf("%s, %s %s\n", usuario, " se ha unido al canal", canal);
+    char *token;
+    while ((token = strsep(&canal, ",")) != NULL)
+    {
+        printf("El token actual es %s\n", token);
+        /*
+        char mensaje[100];
+        sprintf(mensaje, "%s %s %s\n",  usuario, "se ha unido al canal:", token);
+        if(strlen(resp) + strlen(mensaje) < 255)
+            strcat(resp, mensaje);
+        char *nombre_canal = strdup(token);
+        */    
+        char *nombre_canal = strdup(token);
+        struct irc_channel* nuevo_canal =irc_channel_create(nombre_canal, NULL);
+        NodeList *existe=listSearch(channel_list, nuevo_canal, compare_channels);
+        if (existe==NULL || listIsEmpty(channel_list)){
+            printf("%s\n","no existe, lo creare" );
+            NodeList *nc=nodeListNew(nuevo_canal);
+            listAddNode(channel_list, nc);
+            existe=nc;
+        }
+    
+        //falta aniadir usuario	
+        char *nombre_usuario = strdup(usuario);	
+        //TODO validar no agregar usuario dos veces
+        irc_channel_add_user(nombre_usuario, nodeListGetCont(existe) );
+    }
+
+    s_send (receiver, resp);
 }
 
 
