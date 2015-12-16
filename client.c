@@ -118,12 +118,20 @@ static void *network_thread(void *context){
     char *id = s_recv (requester);
     printf ("Usuario conectado: %s \n", id);
 
-
+    char mens[500];
     while(1){
+
+
+ 
+
+
         char *buffer = s_recv(bg_pair);
 	s_send(bg_pair, "OK");
 
-        s_send(requester, buffer);
+     sprintf(mens, "%s%s", id, buffer);
+    s_send (requester, mens);// se adjunta el usuario
+   
+       // s_send(requester, buffer);
         char * resp = s_recv(requester);
 	printf("server resp %s", resp);
         s_send(bg_socket, buffer);
