@@ -244,6 +244,7 @@ int main (int argc, char *argv [])
     g_idle_add(on_idle, ui_socket);
     /* create a new window */
     window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
+    gtk_window_set_title(GTK_WINDOW(window), "IRC ESPOL");
     
     /* When the window is given the "delete-event" signal (this is given
      * by the window manager, usually by the "close" option, or on the
@@ -262,32 +263,27 @@ int main (int argc, char *argv [])
     /* Sets the border width of the window. */
     gtk_container_set_border_width (GTK_CONTAINER (window), 10);
     
-    /* Create a 2x2 table */
-    GtkWidget *table = gtk_table_new (2, 1, FALSE);
-    gtk_table_set_row_spacing(GTK_TABLE(table), 0, 40);
-    gtk_table_set_row_spacing(GTK_TABLE(table), 1, 550);
-    /* Put the table in the main window */
-    gtk_container_add (GTK_CONTAINER (window), table);
-    gtk_window_set_resizable (GTK_WINDOW(window), FALSE);
+    /* Create a box */
+    GtkWidget *box = gtk_vbox_new (FALSE, 3);
+    /* Put the box in the main window */
+    gtk_container_add (GTK_CONTAINER (window), box);
     gtk_widget_set_size_request(window, 400, 600);
 
-    /* Create entry */
-
-
+    /* Create scroll window */
     scrolledwindow = gtk_scrolled_window_new(NULL, NULL);
     gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW(scrolledwindow), GTK_POLICY_NEVER, GTK_POLICY_AUTOMATIC);
     chatview = create_chat_text_view();
     
     gtk_container_add(GTK_CONTAINER(scrolledwindow), chatview);
-    gtk_table_attach_defaults (GTK_TABLE (table), scrolledwindow, 0, 1, 0, 1);
+    gtk_box_pack_start (GTK_BOX (box), scrolledwindow, TRUE, TRUE, 3);
 
     GtkWidget *entry = create_chat_entry ();
 
     /* Insert entry into the bottom of the table */
-    gtk_table_attach_defaults (GTK_TABLE (table), entry, 0, 1, 1, 2);
+    gtk_box_pack_start (GTK_BOX (box), entry, FALSE, FALSE, 3);
 
     gtk_widget_show (scrolledwindow);
-    gtk_widget_show (table);
+    gtk_widget_show (box);
     /* and the window */
     gtk_widget_show (window);
 
